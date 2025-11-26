@@ -1,16 +1,15 @@
-# React + Vite
+# Como rodar o código
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+1. Primeiro baixe e instale o [Node.js](https://nodejs.org/en/download/current)
+   1. Após baixar e instalar copie o local da instalação (ex: `C:\\Arquivos de Programas\nodejs`)
+   2. Vá em `Variáveis de Ambiente de Sistema` > `Variáveis de Ambiente`
+   3. Em `Variáveis do sistema`, de um duplo clique em `Path`
+   4. Clique em `Novo` 
+   5. Adicione o diretório (ex: `C:\\Aequivos de Programas\nodejs`)
+   6. Dê `Ok` e pronto
 
-Currently, two official plugins are available:
+Caso preferir só seguir este [vídeo](https://www.youtube.com/watch?v=YfC8tEfjKCM)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+2. Abra o `promt` ou o `terminal`
+3. Vá no respositório entre no diretório `*\TrabalhoFinal_AlgGraf\structure-view`
+4. No prompt digite `npm run dev` e pronto
