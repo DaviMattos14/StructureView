@@ -1,19 +1,18 @@
 import React from 'react';
 import { Menu, UserCircle, ArrowLeft, LogOut } from 'lucide-react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext'; // Importa o contexto
+import { useAuth } from '../../context/AuthContext';
 
 const Header = ({ title, toggleSidebar, isDarkMode, onLoginClick }) => {
-  const { user, logout } = useAuth(); // Pega o usuário e a função de logout
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
 
-  // Verifica se estamos na página do Visualizador
-  const isVisualizer = location.pathname === '/visualizer';
+  // --- LÓGICA DE TÍTULOS DINÂMICOS ---
+  
+  // 1. Nomes para o Visualizador (baseado em ?algo=...)
   const algoParam = searchParams.get('algo');
-
-  // Mapa de nomes para o título dinâmico
   const algoNames = {
     'dfs': 'Busca em Profundidade (DFS)',
     'bfs': 'Busca em Largura (BFS)',
@@ -21,12 +20,33 @@ const Header = ({ title, toggleSidebar, isDarkMode, onLoginClick }) => {
     'topo': 'Ordenação Topológica'
   };
 
-  // Define qual título mostrar
-  const displayTitle = isVisualizer && algoParam ? algoNames[algoParam] : title;
+  // 2. Nomes para Rotas Específicas (Aulas)
+  const routeTitles = {
+      '/classes/graph-rep': 'Representação de Grafos',
+      // Adicione outras aulas aqui futuramente
+  };
+
+  // Determina o estado atual
+  const isVisualizer = location.pathname === '/visualizer';
+  const isClassPage = routeTitles[location.pathname] !== undefined;
+
+  // Define o Título
+  let displayTitle = title;
+  if (isVisualizer && algoParam) {
+      displayTitle = algoNames[algoParam];
+  } else if (isClassPage) {
+      displayTitle = routeTitles[location.pathname];
+  }
+
+  // Define para onde o botão voltar vai
+  const handleBack = () => {
+      if (isVisualizer) navigate('/algorithms');
+      if (isClassPage) navigate('/classes');
+  };
 
   const handleLogout = () => {
       logout();
-      navigate('/home'); // Redireciona para Home após sair
+      navigate('/home');
   };
 
   const styles = {
@@ -79,9 +99,9 @@ const Header = ({ title, toggleSidebar, isDarkMode, onLoginClick }) => {
         display: 'flex',
         alignItems: 'center',
         gap: '5px',
-        backgroundColor: '#dc2626ff',
-        color: isDarkMode ? '#ffffffff' : '#ffffffff', // Vermelho
-        border: `1px solid ${isDarkMode ? '#dc2626ff' : '#dc2626ff'}`,
+        backgroundColor: 'transparent',
+        color: isDarkMode ? '#f87171' : '#dc2626', 
+        border: `1px solid ${isDarkMode ? '#7f1d1d' : '#fecaca'}`,
         padding: '6px 12px',
         borderRadius: '6px',
         cursor: 'pointer',
@@ -101,7 +121,7 @@ const Header = ({ title, toggleSidebar, isDarkMode, onLoginClick }) => {
         width: '1px',
         height: '24px',
         backgroundColor: isDarkMode ? '#334155' : '#e5e7eb',
-        display: isVisualizer ? 'block' : 'none'
+        display: (isVisualizer || isClassPage) ? 'block' : 'none'
     }
   };
 
@@ -113,14 +133,14 @@ const Header = ({ title, toggleSidebar, isDarkMode, onLoginClick }) => {
           <Menu size={24} />
         </button>
 
-        {/* 2. Botão Voltar (Visualizer) */}
-        {isVisualizer && (
+        {/* 2. Botão Voltar (Condicional) */}
+        {(isVisualizer || isClassPage) && (
             <>
                 <div style={styles.divider}></div>
                 <button 
-                    onClick={() => navigate('/algorithms')} 
+                    onClick={handleBack} 
                     style={styles.iconBtn}
-                    title="Voltar para lista"
+                    title="Voltar"
                 >
                     <ArrowLeft size={24} />
                 </button>
@@ -133,7 +153,6 @@ const Header = ({ title, toggleSidebar, isDarkMode, onLoginClick }) => {
 
       <div>
         {user ? (
-            // ESTADO LOGADO
             <div style={{ display: 'flex', alignItems: 'center' }}>
                 <span style={styles.userText}>
                     <UserCircle size={20} />
@@ -145,7 +164,6 @@ const Header = ({ title, toggleSidebar, isDarkMode, onLoginClick }) => {
                 </button>
             </div>
         ) : (
-            // ESTADO DESLOGADO
             <button onClick={onLoginClick} style={styles.loginBtn}>
                 <UserCircle size={18} />
                 Entrar / Registrar

@@ -4,18 +4,23 @@ import MainLayout from './components/Layout/MainLayout';
 import Home from './pages/Home';             
 import AlgorithmsList from './pages/AlgorithmsList';
 import Visualizer from './pages/Visualizer'; 
-// Remova o import de Login page se não estiver usando
+// Remova o import de Login se não estiver usando
 // import Login from './pages/Login'; 
-import { AuthProvider } from './context/AuthContext'; // IMPORTANTE
+import { AuthProvider } from './context/AuthContext';
+
+// Importa a página de Aulas
+import Classes from './pages/Classes';
+// --- NOVO IMPORT ---
+import GraphRepresentation from './pages/classes/GraphRepresentation'; 
 
 const ProtectedRoute = ({ children }) => {
-    // ... (sua lógica de proteção, se houver)
+    // ... (sua lógica de proteção) ...
     return children;
 };
 
 function App() {
   return (
-    <AuthProvider> {/* O PROVIDER TEM QUE SER A RAIZ ABSOLUTA */}
+    <AuthProvider>
       <BrowserRouter>
         <Routes>
           {/* Rota Pública (se ainda existir) */}
@@ -26,6 +31,12 @@ function App() {
               <Route path="/home" element={<Home />} />
               <Route path="/algorithms" element={<AlgorithmsList />} />
               <Route path="/visualizer" element={<Visualizer />} />
+              
+              {/* Rotas de Aulas */}
+              <Route path="/classes" element={<Classes />} />
+              
+              {/* --- NOVA ROTA ADICIONADA AQUI --- */}
+              <Route path="/classes/graph-rep" element={<GraphRepresentation />} />
           </Route>
         </Routes>
       </BrowserRouter>

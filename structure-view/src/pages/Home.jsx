@@ -29,10 +29,10 @@ const Home = () => {
       
       <div style={styles.text}>
         <p style={{ marginBottom: '1.5rem' }}>
-          Bem-vindo ao <strong>StructureView</strong>. Esta plataforma foi desenhada para auxiliar no estudo de algoritmos complexos através de visualização interativa.
+          Bem-vindo ao <strong>StructureView</strong>. Esta plataforma foi desenvolvida por alunos da UFRJ como parte do trabalho final da matéria Algoritmos e Grafos, com o objetivo de auxiliar no estudo de algoritmos complexos através de visualização interativa.
         </p>
         <p>
-          Clique em "Entrar" no canto superior direito para acessar sua conta, ou navegue pelos algoritmos disponíveis no menu lateral.
+          Clique em "Entrar/Registrar" no canto superior direito para acessar sua conta, ou navegue pelos algoritmos disponíveis no menu lateral.
         </p>
       </div>
     </main>
