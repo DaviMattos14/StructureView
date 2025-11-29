@@ -1,9 +1,16 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
+import { Play, Pause, RotateCcw } from 'lucide-react'; // Ícones para o player
 
 const DepthFirstSearchClass = () => {
     const { isDarkMode } = useOutletContext();
+    
+    // Estado da Simulação Interativa (Mantido)
     const [activeStep, setActiveStep] = useState(0);
+
+    // --- NOVO: Estado da Animação Automática ---
+    const [autoStep, setAutoStep] = useState(0);
+    const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
     const theme = {
         bg: isDarkMode ? '#0f172a' : '#f8f9fa',
@@ -12,12 +19,12 @@ const DepthFirstSearchClass = () => {
         textSec: isDarkMode ? '#94a3b8' : '#475569',
         border: isDarkMode ? '#334155' : '#e2e8f0',
         accent: '#3b82f6',
-        stack: isDarkMode ? '#172235' : '#e0f2fe'
+        stack: isDarkMode ? '#172235' : '#e0f2fe',
+        visited: '#10b981', // Verde para visitado
+        current: '#f59e0b'  // Laranja para atual
     };
 
-    const nodes = useMemo(() => ([
-        'A', 'B', 'C', 'D', 'E', 'F'
-    ]), []);
+    const nodes = useMemo(() => (['A', 'B', 'C', 'D', 'E', 'F']), []);
 
     const positions = {
         A: { x: 80, y: 40 },
@@ -35,6 +42,35 @@ const DepthFirstSearchClass = () => {
         ['E', 'F']
     ];
 
+    // --- NOVO: Roteiro da Animação Automática ---
+    const demoSteps = [
+        { curr: 'A', visited: ['A'], desc: "Inicia em A. Marca como visitado." },
+        { curr: 'B', visited: ['A', 'B'], desc: "Vai para vizinho B." },
+        { curr: 'D', visited: ['A', 'B', 'D'], desc: "Vai para vizinho D." },
+        { curr: 'F', visited: ['A', 'B', 'D', 'F'], desc: "Vai para vizinho F." },
+        { curr: 'E', visited: ['A', 'B', 'D', 'F', 'E'], desc: "Volta e visita E (vizinho de B)." },
+        { curr: 'C', visited: ['A', 'B', 'D', 'F', 'E', 'C'], desc: "Volta e visita C (vizinho de A)." },
+        { curr: null, visited: ['A', 'B', 'D', 'F', 'E', 'C'], desc: "Concluído." }
+    ];
+
+    // --- NOVO: Loop da Animação ---
+    useEffect(() => {
+        let interval;
+        if (isAutoPlaying) {
+            interval = setInterval(() => {
+                setAutoStep((prev) => {
+                    if (prev >= demoSteps.length - 1) {
+                        setIsAutoPlaying(false); // Para no final
+                        return prev;
+                    }
+                    return prev + 1;
+                });
+            }, 1500);
+        }
+        return () => clearInterval(interval);
+    }, [isAutoPlaying]);
+
+    // Dados da simulação interativa (Mantido)
     const dfsSteps = [
         {
             title: 'Inicialização',
@@ -122,9 +158,8 @@ procedure DFSIterativa(origem):
             {edges.map(([u, v]) => {
                 const start = positions[u];
                 const end = positions[v];
-                // Calcular ângulo e ajustar pontos para não sobrepor nós
                 const angle = Math.atan2(end.y - start.y, end.x - start.x);
-                const r = 20; // raio dos nós
+                const r = 20; 
                 const x1 = start.x + r * Math.cos(angle);
                 const y1 = start.y + r * Math.sin(angle);
                 const x2 = end.x - r * Math.cos(angle);
@@ -133,10 +168,7 @@ procedure DFSIterativa(origem):
                 return (
                     <line
                         key={`${u}-${v}`}
-                        x1={x1}
-                        y1={y1}
-                        x2={x2}
-                        y2={y2}
+                        x1={x1} y1={y1} x2={x2} y2={y2}
                         stroke={theme.textSec}
                         strokeWidth="2"
                         markerEnd="url(#arrow-dfs)"
@@ -293,6 +325,79 @@ procedure DFSIterativa(origem):
                     </div>
                 </section>
 
+                {/* --- NOVA SEÇÃO: VISUALIZAÇÃO AUTOMÁTICA --- */}
+                <section style={{ 
+                    backgroundColor: theme.cardBg, 
+                    borderRadius: '12px', 
+                    border: `1px solid ${theme.border}`,
+                    padding: '40px', 
+                    marginBottom: '40px',
+                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center'
+                }}>
+                    <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                        <h3 style={{ color: theme.text, fontSize: '1.2rem', fontWeight: 600 }}>Execução Visual</h3>
+                        
+                        {/* Controles do Mini Player */}
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                            <button onClick={() => setAutoStep(0)} style={{ padding: '8px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.bg, cursor: 'pointer', color: theme.textSec }}>
+                                <RotateCcw size={16} />
+                            </button>
+                            <button onClick={() => setIsAutoPlaying(!isAutoPlaying)} style={{ padding: '8px 16px', borderRadius: '6px', border: 'none', background: theme.accent, color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold' }}>
+                                {isAutoPlaying ? <Pause size={16}/> : <Play size={16}/>}
+                                {isAutoPlaying ? 'Pausar' : 'Reproduzir'}
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <svg width="300" height="300" viewBox="0 0 380 280" style={{ overflow: 'visible' }}>
+                        {/* Arestas */}
+                        {edges.map(([u, v]) => {
+                            const start = positions[u];
+                            const end = positions[v];
+                            const angle = Math.atan2(end.y - start.y, end.x - start.x);
+                            const r = 20; 
+                            const x1 = start.x + r * Math.cos(angle);
+                            const y1 = start.y + r * Math.sin(angle);
+                            const x2 = end.x - r * Math.cos(angle);
+                            const y2 = end.y - r * Math.sin(angle);
+                            
+                            return <line key={`${u}-${v}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke={theme.textSec} strokeWidth="2" markerEnd="url(#arrow-dfs)" />;
+                        })}
+                        
+                        {/* Nós */}
+                        {nodes.map(n => {
+                            const pos = positions[n];
+                            const currentData = demoSteps[autoStep];
+                            
+                            const isCurr = currentData.curr === n;
+                            const isVis = currentData.visited.includes(n);
+                            
+                            let fill = theme.cardBg; // Branco/Escuro
+                            if (isVis) fill = theme.visited; // Verde
+                            if (isCurr) fill = theme.current; // Laranja
+                            
+                            let textColor = theme.text;
+                            if (isVis || isCurr) textColor = '#fff';
+
+                            return (
+                                <g key={n} style={{ transition: 'all 0.3s ease' }}>
+                                    <circle cx={pos.x} cy={pos.y} r={isCurr ? "25" : "20"} fill={fill} stroke={theme.accent} strokeWidth="2" />
+                                    <text x={pos.x} y={pos.y} dy="5" textAnchor="middle" fill={textColor} fontWeight="bold">{n}</text>
+                                </g>
+                            );
+                        })}
+                    </svg>
+
+                    <div style={{ marginTop: '20px', padding: '15px', backgroundColor: theme.bg, borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', textAlign: 'center' }}>
+                         <span style={{ color: theme.textSec, fontSize: '0.9rem', marginRight: '10px' }}>Passo {autoStep + 1}/{demoSteps.length}:</span>
+                         <strong style={{ color: theme.text }}>{demoSteps[autoStep].desc}</strong>
+                    </div>
+                </section>
+                {/* ----------------------------------------- */}
+
                 <section style={{ marginBottom: '60px' }}>
                     <h3 style={{ color: theme.text, fontSize: '1.2rem', marginBottom: '20px', fontWeight: 600 }}>
                         Complexidade e Boas Práticas
@@ -337,4 +442,3 @@ procedure DFSIterativa(origem):
 };
 
 export default DepthFirstSearchClass;
-

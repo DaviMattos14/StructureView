@@ -199,7 +199,7 @@ classe ListaEncadeada:
                     </h2>
                     <p style={{ lineHeight: 1.8, color: theme.textSec, marginBottom: '15px', fontSize: '1.05rem' }}>
                         Uma lista encadeada modela uma <strong style={{ color: theme.text }}>sequência ordenada de nós</strong>, em que <strong style={{ color: theme.text }}>cada nó conhece apenas o próximo elemento</strong>. 
-                        Diferentemente de arrays, que armazenam elementos contiguamente na memória, listas encadeadas distribuem os nós por posições arbitrárias, conectados por ponteiros (referências).
+                        Diferentemente de arrays, que armazenam elementos continuamente na memória, listas encadeadas distribuem os nós por posições arbitrárias, conectados por ponteiros (referências).
                     </p>
                     <p style={{ lineHeight: 1.8, color: theme.textSec, marginBottom: '15px', fontSize: '1.05rem' }}>
                         <strong style={{ color: theme.text }}>Por que evitam realocação?</strong> Arrays pré-alocam espaço contíguo. Quando crescem além da capacidade, precisam copiar todos os elementos 
