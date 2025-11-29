@@ -20,7 +20,7 @@ export const api = {
       return data;
     } catch (error) {
       if (error.message.includes('fetch')) {
-        throw new Error('Não foi possível conectar ao servidor. Verifique se o backend está rodando na porta 3001.');
+        throw new Error('Não foi possível conectar ao servidor.');
       }
       throw error;
     }
@@ -45,7 +45,7 @@ export const api = {
       return data;
     } catch (error) {
       if (error.message.includes('fetch')) {
-        throw new Error('Não foi possível conectar ao servidor. Verifique se o backend está rodando na porta 3001.');
+        throw new Error('Não foi possível conectar ao servidor.');
       }
       throw error;
     }
