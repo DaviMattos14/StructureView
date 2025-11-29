@@ -69,9 +69,9 @@ const Classes = () => {
                 <div 
                   key={item.id}
                   onClick={() => {
-                    // --- NAVEGAÇÃO ---
-                    if (item.id === 'graph-rep') navigate('/classes/graph-rep');
-                    else if (item.id === 'graph-intro') navigate('/classes/graph-rep'); // Caso use o ID antigo
+                    if (item.id === 'graph-rep' || item.id === 'graph-intro') navigate('/classes/graph-rep');
+                    else if (item.id === 'linked-list') navigate('/classes/linked-list');
+                    else if (item.id === 'dfs-intro') navigate('/classes/dfs');
                     else console.log("Aula em breve");
                   }}
                   style={{
