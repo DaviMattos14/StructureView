@@ -8,94 +8,79 @@ const DFSStartFinish = () => {
   const { isDarkMode } = useOutletContext();
   const { user } = useAuth();
 
-  const EXERCISE_ID = 2; 
-    const [correctAnswers, setCorrectAnswers] = useState(null);
-    const [answerLoading, setAnswerLoading] = useState(false);
+  const EXERCISE_ID = 2;
+  const CACHE_KEY = `exercise_answer_${EXERCISE_ID}`;
 
+  // Estado para armazenar o gabarito dinâmico vindo do banco
+  const [correctAnswers, setCorrectAnswers] = useState(null);
+  
   const [inputs, setInputs] = useState({});
   const [isSaving, setIsSaving] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
 
+  // 1. Carregar Gabarito (Banco ou Cache) e Progresso do Usuário
   useEffect(() => {
-    const loadProgress = async () => {
-        if (!user) return;
+    const loadData = async () => {
         try {
-            const data = await api.getUserProgress(EXERCISE_ID, user.id);
-            if (data && data.success && data.progress) {
-                const savedInputs = JSON.parse(data.progress.user_answer);
-                setInputs(savedInputs);
+            // A. Tenta pegar gabarito do cache
+            const cachedAnswer = sessionStorage.getItem(CACHE_KEY);
+            if (cachedAnswer) {
+                setCorrectAnswers(JSON.parse(cachedAnswer));
+            } else {
+                // B. Se não tiver, busca no banco
+                const exData = await api.getExerciseDetails(EXERCISE_ID);
+                if (exData.success && exData.exercise.answer) {
+                    // O banco retorna a resposta como string JSON, precisamos fazer o parse
+                    // Se o banco já retornar objeto (depende do driver), o JSON.parse pode falhar, então tratamos
+                    let parsedAnswer = exData.exercise.answer;
+                    if (typeof parsedAnswer === 'string') {
+                        parsedAnswer = JSON.parse(parsedAnswer);
+                    }
+                    
+                    setCorrectAnswers(parsedAnswer);
+                    sessionStorage.setItem(CACHE_KEY, JSON.stringify(parsedAnswer));
+                }
+            }
+
+            // C. Busca progresso do usuário
+            if (user) {
+                const pData = await api.getUserProgress(EXERCISE_ID, user.id);
+                if (pData && pData.success && pData.progress) {
+                    const savedInputs = JSON.parse(pData.progress.user_answer);
+                    setInputs(savedInputs);
+                }
             }
         } catch (e) {
-            console.error("Erro ao carregar progresso:", e);
+            console.error("Erro ao carregar dados:", e);
+        } finally {
+            setLoadingData(false);
         }
     };
-    loadProgress();
+    
+    loadData();
   }, [user]);
-
-    // Carrega o gabarito (com cache em sessionStorage)
-    useEffect(() => {
-        let mounted = true;
-        const key = `exercise_answer_${EXERCISE_ID}`;
-        const loadAnswer = async () => {
-            setAnswerLoading(true);
-            try {
-                const cached = sessionStorage.getItem(key);
-                if (cached) {
-                    const parsed = JSON.parse(cached);
-                    if (mounted) setCorrectAnswers(parsed);
-                    setAnswerLoading(false);
-                    return;
-                }
-
-                const data = await api.getExerciseDetails(EXERCISE_ID);
-                if (data && data.success && data.exercise) {
-                    let ans = data.exercise.answer;
-                    // tenta desserializar caso esteja salvo como JSON
-                    try {
-                        ans = JSON.parse(ans);
-                    } catch (_) {
-                        // mantém como está
-                    }
-                    if (mounted) setCorrectAnswers(ans);
-                    try { sessionStorage.setItem(key, JSON.stringify(ans)); } catch (_) {}
-                }
-            } catch (e) {
-                console.error('Erro ao carregar gabarito:', e);
-            } finally {
-                setAnswerLoading(false);
-            }
-        };
-
-        loadAnswer();
-        return () => { mounted = false; };
-    }, [EXERCISE_ID]);
 
   const handleChange = (e) => {
     const val = e.target.value === '' ? '' : parseInt(e.target.value);
     setInputs(prev => ({ ...prev, [e.target.name]: val }));
   };
 
-  // --- FUNÇÃO PARA VERIFICAR SE ESTÁ TUDO COMPLETO ---
   const checkCompletion = (currentInputs) => {
       if (!correctAnswers) return false;
       for (let key in correctAnswers) {
-          if (currentInputs[key] !== correctAnswers[key]) {
-              return false;
-          }
+          if (currentInputs[key] !== correctAnswers[key]) return false;
       }
       return true;
   };
 
   const handleAutoSave = async () => {
     if (!user) return;
-
     setIsSaving(true);
     try {
-        // Calcula se está completo antes de enviar
         const isCompleted = checkCompletion(inputs);
-        
         await api.submitExercise(EXERCISE_ID, user.id, inputs, isCompleted);
     } catch (error) {
-        console.error("Erro ao salvar progresso:", error);
+        console.error(error);
     } finally {
         setTimeout(() => setIsSaving(false), 500);
     }
@@ -105,18 +90,15 @@ const DFSStartFinish = () => {
       if (!correctAnswers) return;
       if (window.confirm("Tem certeza? Tente resolver sozinho primeiro!")) {
           setInputs(correctAnswers);
-          // Salva como completo pois é o gabarito
-          setTimeout(() => {
-               api.submitExercise(EXERCISE_ID, user?.id, correctAnswers, true);
-          }, 100);
+          setTimeout(handleAutoSave, 100);
       }
   };
 
   const getRowStatus = (id) => {
+      if (!correctAnswers) return 'neutral';
       const s = inputs[`start${id}`];
       const e = inputs[`end${id}`];
       if (s === undefined || s === '' || e === undefined || e === '') return 'neutral';
-      if (!correctAnswers) return 'neutral';
       if (s === correctAnswers[`start${id}`] && e === correctAnswers[`end${id}`]) return 'correct';
       return 'wrong';
   };
@@ -156,6 +138,10 @@ const DFSStartFinish = () => {
     </svg>
   );
 
+  if (loadingData) {
+      return <div style={{display:'flex', justifyContent:'center', padding:'50px', color:theme.textSec}}><Loader2 className="animate-spin"/> Carregando...</div>;
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: theme.bg, overflowY: 'auto' }}>
       
@@ -174,18 +160,16 @@ const DFSStartFinish = () => {
 
                     <button 
                         onClick={revealAnswers}
-                        disabled={answerLoading || !correctAnswers}
-                        title={answerLoading ? 'Carregando gabarito...' : (!correctAnswers ? 'Gabarito indisponível' : '')}
-                        style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent', border: `1px solid ${theme.border}`, color: theme.textSec, padding: '6px 12px', borderRadius: '6px', cursor: answerLoading || !correctAnswers ? 'not-allowed' : 'pointer', fontSize: '0.85rem' }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent', border: `1px solid ${theme.border}`, color: theme.textSec, padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}
                     >
-                        {answerLoading ? <Loader2 size={16} className="animate-spin" /> : <Eye size={16} />} Revelar Respostas
+                        <Eye size={16} /> Revelar Respostas
                     </button>
                 </div>
             </div>
 
             <p style={{ color: theme.textSec, lineHeight: '1.6' }}>
                 Considere o grafo abaixo. Você inicia o algoritmo <b>DFS</b> no nó <b>0</b>. 
-                Preencha os tempos de início (start) e fim (finish).
+                Assuma que os números dos vértices são usados como critério de desempate.
             </p>
             
             <GraphSVG />
