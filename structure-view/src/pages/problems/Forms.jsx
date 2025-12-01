@@ -22,7 +22,7 @@ export default function Forms() {
         
         try {
             const data = await api.getUserProgress(EXERCISE_ID, user.id);
-            
+            console.log(data)
             if (data && data.success && data.progress) {
                 // Se tiver resposta salva, converte de volta para objeto
                 const savedInputs = JSON.parse(data.progress.user_answer);
@@ -38,7 +38,7 @@ export default function Forms() {
   }, [user]);
 
   const handleAutoSave = async () => {
-    if (!user) return;
+    if (!user || inputs.length === 2) return;
 
     setIsSaving(true);
     try {
@@ -58,12 +58,12 @@ export default function Forms() {
   };
 
   const handleChange = (e) => {
-    const val = e === '' ? '' : parseInt(e);
+    const val = e === '' ? '' : e;
     setInputs(() => JSON.stringify(({ ...answer, expected: val })));
   };
 
   useEffect(() => {
-    handleAutoSave();
+    if(inputs !== "{}") handleAutoSave();
   }, [inputs])
 
   const theme = {
@@ -74,6 +74,8 @@ export default function Forms() {
     cardBorder: isDarkMode ? '#334155' : '#e2e8f0',
     inputBg: isDarkMode ? '#0f172a' : '#ffffff'
   };
+
+  //console.log(original_answer)
 
   return (
     <main style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: theme.bg, overflowY: 'auto' }}>
