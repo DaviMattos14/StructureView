@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
-// navigate removido pois o Header Global cuida disso
+import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { CheckCircle, XCircle, Eye } from 'lucide-react'; // Adicionei Eye para o botão revelar
+import { CheckCircle, XCircle, Eye, Loader2, CloudUpload } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { api } from '../../services/api';
 
 const DFSStartFinish = () => {
   const { isDarkMode } = useOutletContext();
+  const { user } = useAuth();
 
-  // Gabarito
+  const EXERCISE_ID = 2;
+
   const correctedAnswers = {
       start0: 1, end0: 12,
       start2: 2, end2: 11,
@@ -17,16 +20,52 @@ const DFSStartFinish = () => {
   };
 
   const [inputs, setInputs] = useState({});
+  const [isSaving, setIsSaving] = useState(false);
+
+  // --- CARREGAMENTO DOS DADOS ---
+  useEffect(() => {
+    const loadProgress = async () => {
+        if (!user) return;
+        
+        try {
+            const data = await api.getUserProgress(EXERCISE_ID, user.id);
+            
+            if (data && data.success && data.progress) {
+                // Se tiver resposta salva, converte de volta para objeto
+                const savedInputs = JSON.parse(data.progress.user_answer);
+                setInputs(savedInputs);
+            }
+        } catch (e) {
+            console.error("Erro ao carregar progresso:", e);
+        }
+    };
+    
+    loadProgress();
+  }, [user]);
+  // ------------------------------
 
   const handleChange = (e) => {
     const val = e.target.value === '' ? '' : parseInt(e.target.value);
-    setInputs({ ...inputs, [e.target.name]: val });
+    setInputs(prev => ({ ...prev, [e.target.name]: val }));
   };
 
-  // --- NOVO: Função para preencher tudo ---
+  const handleAutoSave = async () => {
+    if (!user) return;
+
+    setIsSaving(true);
+    try {
+        await api.submitExercise(EXERCISE_ID, user.id, inputs);
+    } catch (error) {
+        console.error("Erro ao salvar progresso:", error);
+    } finally {
+        setTimeout(() => setIsSaving(false), 500);
+    }
+  };
+
   const revealAnswers = () => {
       if (window.confirm("Tem certeza? Tente resolver sozinho primeiro!")) {
           setInputs(correctedAnswers);
+          setTimeout(handleAutoSave, 100);
       }
   };
 
@@ -74,7 +113,6 @@ const DFSStartFinish = () => {
   );
 
   return (
-    // --- CABEÇALHO REMOVIDO DAQUI ---
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: theme.bg, overflowY: 'auto' }}>
       
       <div style={{ padding: '40px', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
@@ -83,33 +121,42 @@ const DFSStartFinish = () => {
             <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'}}>
                 <h2 style={{ fontSize: '1.2rem', fontWeight: '600', color: theme.text, margin: '0 0 15px 0' }}>1. DFS Start and Finish Time</h2>
                 
-                {/* --- BOTÃO REVELAR --- */}
-                <button 
-                    onClick={revealAnswers}
-                    style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent', border: `1px solid ${theme.border}`, color: theme.textSec, padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}
-                >
-                    <Eye size={16} /> Revelar Respostas
-                </button>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    {user && (
+                        <span style={{ fontSize: '0.8rem', color: theme.textSec, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            {isSaving ? <><Loader2 size={14} className="animate-spin"/> Salvando...</> : <><CloudUpload size={14}/> Salvo</>}
+                        </span>
+                    )}
+
+                    <button 
+                        onClick={revealAnswers}
+                        style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent', border: `1px solid ${theme.border}`, color: theme.textSec, padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}
+                    >
+                        <Eye size={16} /> Revelar Respostas
+                    </button>
+                </div>
             </div>
 
             <p style={{ color: theme.textSec, lineHeight: '1.6' }}>
                 Considere o grafo abaixo. Você inicia o algoritmo <b>DFS</b> no nó <b>0</b>. 
-                Assuma que os números dos vértices são usados como critério de desempate 
-                (você visita os vértices com números menores primeiro).
+                Preencha os tempos de início (start) e fim (finish).
             </p>
             
             <GraphSVG />
             
-            <p style={{ color: theme.textSec, marginBottom: '20px' }}>
-                Preencha os tempos de início (start) e fim (finish).
-            </p>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginTop: '30px' }}>
                 {[0, 1, 2, 3, 4, 5].map(id => {
                     const status = getRowStatus(id);
                     let borderColor = theme.border;
-                    if (status === 'correct') borderColor = theme.success;
-                    if (status === 'wrong') borderColor = theme.error;
+                    let icon = null;
+
+                    if (status === 'correct') {
+                        borderColor = theme.success;
+                        icon = <CheckCircle size={18} color={theme.success} />;
+                    } else if (status === 'wrong') {
+                        borderColor = theme.error;
+                        icon = <XCircle size={18} color={theme.error} />;
+                    }
 
                     return (
                         <div key={id} style={{ 
@@ -119,8 +166,7 @@ const DFSStartFinish = () => {
                         }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                                 <strong style={{ color: theme.text }}>Vértice {id}</strong>
-                                {status === 'correct' && <CheckCircle size={18} color={theme.success} />}
-                                {status === 'wrong' && <XCircle size={18} color={theme.error} />}
+                                {icon}
                             </div>
                             
                             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -129,7 +175,8 @@ const DFSStartFinish = () => {
                                     <input 
                                         type="number" name={`start${id}`} 
                                         value={inputs[`start${id}`] !== undefined ? inputs[`start${id}`] : ''}
-                                        onChange={handleChange} 
+                                        onChange={handleChange}
+                                        onBlur={handleAutoSave}
                                         style={{ width: '100%', padding: '8px', borderRadius: '4px', border: `1px solid ${theme.border}`, background: theme.cardBg, color: theme.text }} 
                                     />
                                 </div>
@@ -138,7 +185,8 @@ const DFSStartFinish = () => {
                                     <input 
                                         type="number" name={`end${id}`} 
                                         value={inputs[`end${id}`] !== undefined ? inputs[`end${id}`] : ''}
-                                        onChange={handleChange} 
+                                        onChange={handleChange}
+                                        onBlur={handleAutoSave}
                                         style={{ width: '100%', padding: '8px', borderRadius: '4px', border: `1px solid ${theme.border}`, background: theme.cardBg, color: theme.text }} 
                                     />
                                 </div>
@@ -147,6 +195,7 @@ const DFSStartFinish = () => {
                     );
                 })}
             </div>
+
         </section>
       </div>
     </div>

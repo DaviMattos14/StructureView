@@ -42,12 +42,21 @@ CREATE TABLE IF NOT EXISTS user_exercises (
 INSERT INTO users (email, password, name) 
 VALUES ('admin@example.com', 'senha123', 'Admin')
 ON DUPLICATE KEY UPDATE email=email;
+-- Inserir um exercício de exemplo
 
--- Inserir exercícios de exemplo
-INSERT INTO exercises (title, answer, topic) 
-VALUES 
-('BFS - Busca em Largura', 'queue = [inicio]; visited = []; enquanto queue: node = queue.pop(0); visited.append(node);', 'Grafos'),
-('DFS - Busca em Profundidade', 'stack = [inicio]; visited = []; enquanto stack: node = stack.pop(); visited.append(node);', 'Grafos'),
-('Dijkstra', 'use uma fila de prioridade e relaxe as arestas', 'Grafos')
-ON DUPLICATE KEY UPDATE title=title;
+ALTER TABLE exercises ADD COLUMN difficulty VARCHAR(50) DEFAULT 'Médio';
 
+-- 2. Atualizar ou Inserir o Exercício com a Dificuldade
+INSERT INTO exercises (id, title, topic, answer, difficulty) 
+VALUES (
+    2, 
+    'Tempos de Busca em Profundidade (DFS)', 
+    'Grafos', 
+    '{"start0":0,"end0":12,"start2":1,"end2":10,"start3":2,"end3":3,"start4":4,"end4":9,"start1":7,"end1":8,"start5":6,"end5":7}',
+    'Facil'
+)
+ON DUPLICATE KEY UPDATE 
+    title = VALUES(title),
+    topic = VALUES(topic),
+    answer = VALUES(answer),
+    difficulty = VALUES(difficulty);

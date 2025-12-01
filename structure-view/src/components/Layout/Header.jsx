@@ -26,7 +26,7 @@ const Header = ({ title, toggleSidebar, isDarkMode, onLoginClick }) => {
       '/classes/bfs': 'Busca em Largura (Teoria)',
       '/classes/dfs': 'Busca em Profundidade (Teoria)',
       // Exercícios
-      '/problem/dfs-start-finish-time': 'Exercício: DFS - Tempos' 
+      '/problem/dfs-start-finish-time': 'Exercício: Tempos de Busca em Profundidade (DFS)' 
   };
 
   const displayTitle = (isVisualizer && algoParam) 

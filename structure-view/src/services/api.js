@@ -5,23 +5,14 @@ export const api = {
     try {
       const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-
       const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Erro ao fazer login');
-      }
-
+      if (!response.ok) throw new Error(data.message || 'Erro ao fazer login');
       return data;
     } catch (error) {
-      if (error.message.includes('fetch')) {
-        throw new Error('Não foi possível conectar ao servidor.');
-      }
+      if (error.message.includes('fetch')) throw new Error('Não foi possível conectar ao servidor.');
       throw error;
     }
   },
@@ -30,64 +21,59 @@ export const api = {
     try {
       const response = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, name }),
       });
-
       const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Erro ao registrar');
-      }
-
+      if (!response.ok) throw new Error(data.message || 'Erro ao registrar');
       return data;
     } catch (error) {
-      if (error.message.includes('fetch')) {
-        throw new Error('Não foi possível conectar ao servidor.');
-      }
+      if (error.message.includes('fetch')) throw new Error('Não foi possível conectar ao servidor.');
       throw error;
     }
   },
-
-  // --- NOVOS MÉTODOS PARA EXERCÍCIOS ---
 
   async getExercisesList() {
     try {
       const response = await fetch(`${API_URL}/exercises`);
       const data = await response.json();
       if (!response.ok) throw new Error(data.message);
-      return data; // Retorna { success: true, exercises: [...] }
+      return data;
     } catch (error) {
-      console.error("Erro ao buscar lista de exercícios:", error);
+      console.error("Erro ao buscar lista:", error);
       throw error;
     }
   },
+
+  // --- NOVO MÉTODO ---
+  async getUserProgress(exerciseId, userId) {
+      try {
+          const response = await fetch(`${API_URL}/exercises/${exerciseId}/progress?user_id=${userId}`);
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.message);
+          return data; // { success: true, progress: { user_answer: "...", is_completed: 1 } }
+      } catch (error) {
+          console.error("Erro ao buscar progresso:", error);
+          return null;
+      }
+  },
+  // ------------------
 
   async submitExercise(exerciseId, userId, userAnswer) {
     try {
       const response = await fetch(`${API_URL}/exercises/${exerciseId}/submit`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        // Enviamos a resposta como string JSON para ser genérico
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
             user_id: userId, 
-            user_answer: JSON.stringify(userAnswer) 
+            user_answer: JSON.stringify(userAnswer) // Garante envio como string
         }),
       });
-
       const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Erro ao enviar resposta');
-      }
-
-      return data; // Retorna { success: true, is_completed: boolean }
+      if (!response.ok) throw new Error(data.message);
+      return data;
     } catch (error) {
-      console.error("Erro ao submeter exercício:", error);
+      console.error("Erro ao submeter:", error);
       throw error;
     }
   }
