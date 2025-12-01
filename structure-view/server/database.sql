@@ -51,7 +51,7 @@ INSERT INTO exercises (id, title, topic, answer, difficulty)
 VALUES (
     2, 
     'Tempos de Busca em Profundidade (DFS)', 
-    'Grafos', 
+    'DFS', 
     '{"start0":0,"end0":12,"start2":1,"end2":10,"start3":2,"end3":3,"start4":4,"end4":9,"start1":7,"end1":8,"start5":6,"end5":7}',
     'Facil'
 )
@@ -93,6 +93,16 @@ VALUES (
   '{"graph":{"A":[["B",4],["C",2]],"B":[["C",5],["D",10]],"C":[["E",3]],"D":[["F",11]],"E":[["D",4]],"F":[]},"options":[16,17,18,20,21],"expected":20,"correct":20}',
   'Dijkstra'
 );
+
+-- Exercícios de busca em profundidade
+INSERT INTO exercises (title, answer, topic)
+VALUES (
+  'Múltipla escolha - Qual é a ordem de visita a partir do nó S? (Usando busca em profundidade)',
+  '{"graph":{"S":[["A",1],["B",1]],"A":[["C",1]],"B":[["E",1]],"C":[["D",1]],"D":[],"E":[]},"options":["S, A, C, D, B, E","S, B, E, A, C, D","A, S, C, D, B, E","S, A, B, C, D, E"],"expected":"S,A,C,D,B,E","correct":"S,A,C,D,B,E"}',
+  'DFS'
+);
+
+
 
 
 
