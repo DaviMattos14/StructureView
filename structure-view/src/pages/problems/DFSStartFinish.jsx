@@ -9,15 +9,8 @@ const DFSStartFinish = () => {
   const { user } = useAuth();
 
   const EXERCISE_ID = 2; 
-
-  const correctedAnswers = {
-      start0: 1, end0: 12,
-      start2: 2, end2: 11,
-      start3: 3, end3: 4,
-      start4: 5, end4: 10,
-      start1: 6, end1: 9,
-      start5: 7, end5: 8
-  };
+    const [correctAnswers, setCorrectAnswers] = useState(null);
+    const [answerLoading, setAnswerLoading] = useState(false);
 
   const [inputs, setInputs] = useState({});
   const [isSaving, setIsSaving] = useState(false);
@@ -38,6 +31,44 @@ const DFSStartFinish = () => {
     loadProgress();
   }, [user]);
 
+    // Carrega o gabarito (com cache em sessionStorage)
+    useEffect(() => {
+        let mounted = true;
+        const key = `exercise_answer_${EXERCISE_ID}`;
+        const loadAnswer = async () => {
+            setAnswerLoading(true);
+            try {
+                const cached = sessionStorage.getItem(key);
+                if (cached) {
+                    const parsed = JSON.parse(cached);
+                    if (mounted) setCorrectAnswers(parsed);
+                    setAnswerLoading(false);
+                    return;
+                }
+
+                const data = await api.getExerciseDetails(EXERCISE_ID);
+                if (data && data.success && data.exercise) {
+                    let ans = data.exercise.answer;
+                    // tenta desserializar caso esteja salvo como JSON
+                    try {
+                        ans = JSON.parse(ans);
+                    } catch (_) {
+                        // mantém como está
+                    }
+                    if (mounted) setCorrectAnswers(ans);
+                    try { sessionStorage.setItem(key, JSON.stringify(ans)); } catch (_) {}
+                }
+            } catch (e) {
+                console.error('Erro ao carregar gabarito:', e);
+            } finally {
+                setAnswerLoading(false);
+            }
+        };
+
+        loadAnswer();
+        return () => { mounted = false; };
+    }, [EXERCISE_ID]);
+
   const handleChange = (e) => {
     const val = e.target.value === '' ? '' : parseInt(e.target.value);
     setInputs(prev => ({ ...prev, [e.target.name]: val }));
@@ -45,9 +76,9 @@ const DFSStartFinish = () => {
 
   // --- FUNÇÃO PARA VERIFICAR SE ESTÁ TUDO COMPLETO ---
   const checkCompletion = (currentInputs) => {
-      // Verifica se todas as chaves do gabarito estão presentes e corretas nos inputs
-      for (let key in correctedAnswers) {
-          if (currentInputs[key] !== correctedAnswers[key]) {
+      if (!correctAnswers) return false;
+      for (let key in correctAnswers) {
+          if (currentInputs[key] !== correctAnswers[key]) {
               return false;
           }
       }
@@ -71,11 +102,12 @@ const DFSStartFinish = () => {
   };
 
   const revealAnswers = () => {
+      if (!correctAnswers) return;
       if (window.confirm("Tem certeza? Tente resolver sozinho primeiro!")) {
-          setInputs(correctedAnswers);
+          setInputs(correctAnswers);
           // Salva como completo pois é o gabarito
           setTimeout(() => {
-               api.submitExercise(EXERCISE_ID, user.id, correctedAnswers, true);
+               api.submitExercise(EXERCISE_ID, user?.id, correctAnswers, true);
           }, 100);
       }
   };
@@ -84,7 +116,8 @@ const DFSStartFinish = () => {
       const s = inputs[`start${id}`];
       const e = inputs[`end${id}`];
       if (s === undefined || s === '' || e === undefined || e === '') return 'neutral';
-      if (s === correctedAnswers[`start${id}`] && e === correctedAnswers[`end${id}`]) return 'correct';
+      if (!correctAnswers) return 'neutral';
+      if (s === correctAnswers[`start${id}`] && e === correctAnswers[`end${id}`]) return 'correct';
       return 'wrong';
   };
 
@@ -141,9 +174,11 @@ const DFSStartFinish = () => {
 
                     <button 
                         onClick={revealAnswers}
-                        style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent', border: `1px solid ${theme.border}`, color: theme.textSec, padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}
+                        disabled={answerLoading || !correctAnswers}
+                        title={answerLoading ? 'Carregando gabarito...' : (!correctAnswers ? 'Gabarito indisponível' : '')}
+                        style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent', border: `1px solid ${theme.border}`, color: theme.textSec, padding: '6px 12px', borderRadius: '6px', cursor: answerLoading || !correctAnswers ? 'not-allowed' : 'pointer', fontSize: '0.85rem' }}
                     >
-                        <Eye size={16} /> Revelar Respostas
+                        {answerLoading ? <Loader2 size={16} className="animate-spin" /> : <Eye size={16} />} Revelar Respostas
                     </button>
                 </div>
             </div>

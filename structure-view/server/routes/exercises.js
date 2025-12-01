@@ -108,6 +108,26 @@ router.post('/:id/submit', async (req, res) => {
   }
 });
 
+// GET /:id => detalhes do exercício (inclui gabarito `answer`)
+router.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [rows] = await pool.execute(
+      'SELECT id, title, answer, topic, difficulty, created_at, updated_at FROM exercises WHERE id = ?',
+      [id]
+    );
+
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Exercício não encontrado' });
+    }
+
+    res.json({ success: true, exercise: rows[0] });
+  } catch (error) {
+    console.error('Erro ao buscar exercício:', error);
+    res.status(500).json({ success: false, message: 'Erro interno do servidor' });
+  }
+});
+
 // DELETE /:id
 router.delete('/:id', async (req, res) => {
   try {

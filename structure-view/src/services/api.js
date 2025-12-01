@@ -69,6 +69,23 @@ export const api = {
     }
   },
 
+  async getExerciseDetails(id) {
+    try {
+      const response = await fetch(`${API_URL}/exercises/${id}`);
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Resposta inválida do servidor (não é JSON)");
+      }
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message);
+      return data;
+    } catch (error) {
+      console.error("Erro ao buscar detalhes do exercício:", error);
+      throw error;
+    }
+  },
+
   async getUserProgress(exerciseId, userId) {
       try {
           const response = await fetch(`${API_URL}/exercises/${exerciseId}/progress?user_id=${userId}`);
