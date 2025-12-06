@@ -25,7 +25,7 @@ const Header = ({ title, toggleSidebar, isDarkMode, onLoginClick }) => {
       '/classes/linked-list': 'Listas Encadeadas',
       '/classes/bfs': 'Busca em Largura (BFS)',
       '/classes/dfs': 'Busca em Profundidade (DFS)',
-      '/classes/topological-sort': 'Ordenação Topológica',
+      '/classes/topological': 'Ordenação Topológica',
       '/classes/dijkstra': 'Algoritmo de Dijkstra',
       // Exercícios
       '/problem/dfs-start-finish-time': 'Exercício: Tempos de Busca em Profundidade (DFS)',
