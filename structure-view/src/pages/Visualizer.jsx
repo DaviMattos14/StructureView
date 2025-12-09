@@ -10,7 +10,7 @@ import GraphEditor from '../components/Graph/GraphEditor';
 import Controls from '../components/Graph/Controls';
 
 import '../components/Graph/engine.css'; 
-import FloydWarshall from './classes/FloydWarshall/FloyWarshall';
+import FloydWarshall from '../components/FloydWarshall/FloydWarshall';
 
 const Visualizer = () => {
     const navigate = useNavigate();

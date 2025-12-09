@@ -1,4 +1,4 @@
-import GraphEditor from "../../../components/Graph/GraphEditor";
+import GraphEditor from "../Graph/GraphEditor";
 import useTheme from "./useTheme";
 
 export default function UpdateGraphModal({ 

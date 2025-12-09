@@ -1,9 +1,6 @@
 import useTheme from "./useTheme";
 
 
-
-
-
 export default function RightPanel({ currentAlgoInfo, currentStepData }) {
     const { theme, isDarkMode } = useTheme();
     
