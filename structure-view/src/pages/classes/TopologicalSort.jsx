@@ -1,14 +1,11 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { Play, Pause, RotateCcw } from 'lucide-react'; // Ícones para o player
+import { Play, Pause, RotateCcw } from 'lucide-react';
 
-const DepthFirstSearchClass = () => {
+const TopologicalSortClass = () => {
     const { isDarkMode } = useOutletContext();
     
-    // Estado da Simulação Interativa (Mantido)
     const [activeStep, setActiveStep] = useState(0);
-
-    // --- NOVO: Estado da Animação Automática ---
     const [autoStep, setAutoStep] = useState(0);
     const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
@@ -18,21 +15,22 @@ const DepthFirstSearchClass = () => {
         text: isDarkMode ? '#f1f5f9' : '#1e293b',
         textSec: isDarkMode ? '#94a3b8' : '#475569',
         border: isDarkMode ? '#334155' : '#e2e8f0',
-        accent: '#3b82f6',
-        stack: isDarkMode ? '#172235' : '#e0f2fe',
-        visited: '#10b981', // Verde para visitado
-        current: '#f59e0b'  // Laranja para atual
+        accent: '#8b5cf6',
+        visited: '#10b981',
+        current: '#f59e0b',
+        finished: '#8b5cf6'
     };
 
+    // Grafo DAG (Directed Acyclic Graph) para ordenação topológica
     const nodes = useMemo(() => (['A', 'B', 'C', 'D', 'E', 'F']), []);
 
     const positions = {
-        A: { x: 80, y: 40 },
-        B: { x: 220, y: 40 },
-        C: { x: 80, y: 150 },
-        D: { x: 220, y: 150 },
-        E: { x: 150, y: 240 },
-        F: { x: 320, y: 240 }
+        A: { x: 80, y: 60 },
+        B: { x: 220, y: 60 },
+        C: { x: 80, y: 180 },
+        D: { x: 220, y: 180 },
+        E: { x: 150, y: 280 },
+        F: { x: 320, y: 180 }
     };
 
     const edges = [
@@ -42,39 +40,49 @@ const DepthFirstSearchClass = () => {
         ['E', 'F']
     ];
 
-    // --- NOVO: Roteiro da Animação Automática ---
+    // Roteiro da Animação Automática
     const demoSteps = [
-        { curr: 'A', visited: ['A'], desc: "Inicia em A. Marca como visitado." },
-        { curr: 'B', visited: ['A', 'B'], desc: "Vai para vizinho B." },
-        { curr: 'D', visited: ['A', 'B', 'D'], desc: "Vai para vizinho D." },
-        { curr: 'F', visited: ['A', 'B', 'D', 'F'], desc: "Vai para vizinho F." },
-        { curr: 'D', visited: ['A', 'B', 'D', 'F'], desc: "Backtrack: Retorna a D (F não tem novos vizinhos)." },
-        { curr: 'B', visited: ['A', 'B', 'D', 'F'], desc: "Backtrack: Retorna a B (D não tem mais vizinhos)." },
-        { curr: 'E', visited: ['A', 'B', 'D', 'F', 'E'], desc: "Vai para vizinho E (próximo de B)." },
-        { curr: 'B', visited: ['A', 'B', 'D', 'F', 'E'], desc: "Backtrack: Retorna a B (E não tem novos vizinhos)." },
-        { curr: 'A', visited: ['A', 'B', 'D', 'F', 'E'], desc: "Backtrack: Retorna a A (B não tem mais vizinhos)." },
-        { curr: 'C', visited: ['A', 'B', 'D', 'F', 'E', 'C'], desc: "Vai para vizinho C (próximo de A)." },
-        { curr: null, visited: ['A', 'B', 'D', 'F', 'E', 'C'], desc: "Concluído." }
+        { curr: 'A', visited: ['A'], finished: [], order: [], desc: "Inicia DFS em A. Marca como visitado (cinza)." },
+        { curr: 'B', visited: ['A', 'B'], finished: [], order: [], desc: "Explora vizinho B de A. Marca B como visitado." },
+        { curr: 'D', visited: ['A', 'B', 'D'], finished: [], order: [], desc: "Explora vizinho D de B. Marca D como visitado." },
+        { curr: 'F', visited: ['A', 'B', 'D', 'F'], finished: [], order: [], desc: "Explora vizinho F de D. Marca F como visitado." },
+        { curr: 'F', visited: ['A', 'B', 'D', 'F'], finished: [], order: [], desc: "F não tem vizinhos não visitados. Preparando para finalizar F." },
+        { curr: null, visited: ['A', 'B', 'D', 'F'], finished: ['F'], order: ['F'], desc: "Finaliza F (preto) e adiciona ao início da lista topológica." },
+        { curr: 'D', visited: ['A', 'B', 'D'], finished: ['F'], order: ['F'], desc: "Backtrack: Retorna a D. D não tem mais vizinhos não visitados." },
+        { curr: null, visited: ['A', 'B', 'D'], finished: ['F', 'D'], order: ['D', 'F'], desc: "Finaliza D e adiciona ao início da lista topológica." },
+        { curr: 'B', visited: ['A', 'B'], finished: ['F', 'D'], order: ['D', 'F'], desc: "Backtrack: Retorna a B. B ainda tem vizinho E não visitado." },
+        { curr: 'E', visited: ['A', 'B', 'E'], finished: ['F', 'D'], order: ['D', 'F'], desc: "Explora vizinho E de B. Marca E como visitado." },
+        { curr: 'E', visited: ['A', 'B', 'E'], finished: ['F', 'D'], order: ['D', 'F'], desc: "E tem vizinho F, mas F já foi finalizado. Ignora." },
+        { curr: 'E', visited: ['A', 'B', 'E'], finished: ['F', 'D'], order: ['D', 'F'], desc: "E não tem mais vizinhos não visitados. Preparando para finalizar E." },
+        { curr: null, visited: ['A', 'B', 'E'], finished: ['F', 'D', 'E'], order: ['E', 'D', 'F'], desc: "Finaliza E e adiciona ao início da lista topológica." },
+        { curr: 'B', visited: ['A', 'B'], finished: ['F', 'D', 'E'], order: ['E', 'D', 'F'], desc: "Backtrack: Retorna a B. B não tem mais vizinhos não visitados." },
+        { curr: null, visited: ['A', 'B'], finished: ['F', 'D', 'E', 'B'], order: ['B', 'E', 'D', 'F'], desc: "Finaliza B e adiciona ao início da lista topológica." },
+        { curr: 'A', visited: ['A'], finished: ['F', 'D', 'E', 'B'], order: ['B', 'E', 'D', 'F'], desc: "Backtrack: Retorna a A. A ainda tem vizinho C não visitado." },
+        { curr: 'C', visited: ['A', 'C'], finished: ['F', 'D', 'E', 'B'], order: ['B', 'E', 'D', 'F'], desc: "Explora vizinho C de A. Marca C como visitado." },
+        { curr: 'C', visited: ['A', 'C'], finished: ['F', 'D', 'E', 'B'], order: ['B', 'E', 'D', 'F'], desc: "C tem vizinho E, mas E já foi finalizado. Ignora." },
+        { curr: 'C', visited: ['A', 'C'], finished: ['F', 'D', 'E', 'B'], order: ['B', 'E', 'D', 'F'], desc: "C não tem mais vizinhos não visitados. Preparando para finalizar C." },
+        { curr: null, visited: ['A', 'C'], finished: ['F', 'D', 'E', 'B', 'C'], order: ['C', 'B', 'E', 'D', 'F'], desc: "Finaliza C e adiciona ao início da lista topológica." },
+        { curr: 'A', visited: ['A'], finished: ['F', 'D', 'E', 'B', 'C'], order: ['C', 'B', 'E', 'D', 'F'], desc: "Backtrack: Retorna a A. A não tem mais vizinhos não visitados." },
+        { curr: null, visited: ['A'], finished: ['F', 'D', 'E', 'B', 'C', 'A'], order: ['A', 'C', 'B', 'E', 'D', 'F'], desc: "Finaliza A e adiciona ao início da lista topológica." },
+        { curr: null, visited: [], finished: ['F', 'D', 'E', 'B', 'C', 'A'], order: ['A', 'C', 'B', 'E', 'D', 'F'], desc: "Ordenação topológica concluída: A → C → B → E → D → F" }
     ];
 
-    // --- NOVO: Loop da Animação ---
     useEffect(() => {
         let interval;
         if (isAutoPlaying) {
             interval = setInterval(() => {
                 setAutoStep((prev) => {
                     if (prev >= demoSteps.length - 1) {
-                        setIsAutoPlaying(false); // Para no final
+                        setIsAutoPlaying(false);
                         return prev;
                     }
                     return prev + 1;
                 });
-            }, 1500);
+            }, 1800);
         }
         return () => clearInterval(interval);
     }, [isAutoPlaying, demoSteps.length]);
 
-    // Reinicia do passo 0 quando clica em reproduzir após terminar
     const handlePlayPause = () => {
         if (!isAutoPlaying && autoStep >= demoSteps.length - 1) {
             setAutoStep(0);
@@ -84,90 +92,98 @@ const DepthFirstSearchClass = () => {
         }
     };
 
-    // Dados da simulação interativa (Mantido)
-    const dfsSteps = [
+    // Dados da simulação interativa
+    const topoSteps = [
         {
             title: 'Inicialização',
-            description: 'Marcamos todos como não visitados, empilhamos o nó inicial (A).',
-            stack: ['A'],
-            visited: []
+            description: 'Iniciamos o DFS a partir de A. Todos os nós começam como não visitados.',
+            visited: [],
+            finished: [],
+            order: [],
+            highlight: null
         },
         {
             title: 'Visita A',
-            description: 'Desempilhamos A, marcamos como visitado e empilhamos seus vizinhos (B, C) em ordem reversa.',
-            stack: ['C', 'B'],
+            description: 'Marcamos A como visitado (cinza) e exploramos seus vizinhos B e C.',
             visited: ['A'],
+            finished: [],
+            order: [],
             highlight: 'A'
         },
         {
             title: 'Visita B',
-            description: 'Processamos B e empilhamos D e E. Repare que empilhar em ordem reversa preserva a ordem natural na exploração.',
-            stack: ['C', 'E', 'D'],
+            description: 'Exploramos B recursivamente. B tem vizinhos D e E.',
             visited: ['A', 'B'],
+            finished: [],
+            order: [],
             highlight: 'B'
         },
         {
             title: 'Visita D',
-            description: 'Desempilhamos D, marcamos como visitado. D tem vizinho F que não foi visitado, então empilhamos F.',
-            stack: ['C', 'E', 'F'],
+            description: 'Exploramos D recursivamente. D tem vizinho F.',
             visited: ['A', 'B', 'D'],
+            finished: [],
+            order: [],
             highlight: 'D'
         },
         {
             title: 'Visita F',
-            description: 'Desempilhamos F, marcamos como visitado. F tem vizinho E que já foi visitado, então F não tem novos vizinhos.',
-            stack: ['C', 'E'],
+            description: 'F não tem vizinhos não visitados. Finalizamos F (preto) e o adicionamos ao início da lista topológica.',
             visited: ['A', 'B', 'D', 'F'],
+            finished: ['F'],
+            order: ['F'],
             highlight: 'F'
         },
         {
-            title: 'Backtrack: Retorna a D',
-            description: 'F não tem mais vizinhos, desempilhamos F e retornamos à pilha. D também não tem mais vizinhos não visitados.',
-            stack: ['C', 'E'],
-            visited: ['A', 'B', 'D', 'F'],
+            title: 'Finaliza D',
+            description: 'Backtrack: D não tem mais vizinhos. Finalizamos D e o adicionamos ao início da lista.',
+            visited: ['A', 'B', 'D'],
+            finished: ['F', 'D'],
+            order: ['D', 'F'],
             highlight: 'D'
         },
         {
-            title: 'Processa E',
-            description: 'Desempilhamos E, marcamos como visitado. E tem vizinho F mas já foi visitado, então E não tem novos vizinhos.',
-            stack: ['C'],
-            visited: ['A', 'B', 'D', 'F', 'E'],
+            title: 'Visita E',
+            description: 'Retornamos a B e exploramos E. E tem vizinho F, mas F já foi finalizado, então ignoramos.',
+            visited: ['A', 'B', 'E'],
+            finished: ['F', 'D'],
+            order: ['D', 'F'],
             highlight: 'E'
         },
         {
+            title: 'Finaliza E e B',
+            description: 'E não tem mais vizinhos. Finalizamos E, depois B, adicionando-os ao início da lista.',
+            visited: ['A', 'B', 'E'],
+            finished: ['F', 'D', 'E', 'B'],
+            order: ['B', 'E', 'D', 'F'],
+            highlight: 'B'
+        },
+        {
             title: 'Visita C',
-            description: 'Desempilhamos C, marcamos como visitado. C tem vizinho E mas já foi visitado. Pilha vazia, DFS termina.',
-            stack: [],
-            visited: ['A', 'B', 'D', 'F', 'E', 'C'],
+            description: 'Retornamos a A e exploramos C. C tem vizinho E, mas E já foi finalizado.',
+            visited: ['A', 'C'],
+            finished: ['F', 'D', 'E', 'B'],
+            order: ['B', 'E', 'D', 'F'],
             highlight: 'C'
+        },
+        {
+            title: 'Finaliza C e A',
+            description: 'C não tem mais vizinhos. Finalizamos C, depois A, completando a ordenação topológica.',
+            visited: ['A', 'C'],
+            finished: ['F', 'D', 'E', 'B', 'C', 'A'],
+            order: ['A', 'C', 'B', 'E', 'D', 'F'],
+            highlight: 'A'
         }
     ];
 
-    const recursivePseudo = `
-procedure DFS(u):
-    marcado[u] = verdadeiro
-    registrarEntrada(u)
-
+    const pseudoCode = `
+procedure TopologicalSort(u):
+    marcado[u] = verdadeiro  // Cinza
     para cada v em adj[u]:
         se !marcado[v]:
-            definirPai(v, u)
-            DFS(v)
-
-    registrarSaida(u)`;
-
-    const iterativePseudo = `
-procedure DFSIterativa(origem):
-    pilha = Stack()
-    pilha.push(origem)
-
-    enquanto pilha não vazia:
-        u = pilha.pop()
-        se marcado[u]: continuar
-        marcado[u] = verdadeiro
-        registrarVisita(u)
-        para v em adj[u] em ordem reversa:
-            se !marcado[v]:
-                pilha.push(v)`;
+            TopologicalSort(v)
+    finalizado[u] = verdadeiro  // Preto
+    listaTopologica.inserirNoInicio(u)`;
 
     const adjacencyRows = nodes.map(node => {
         const neighbors = edges
@@ -177,9 +193,9 @@ procedure DFSIterativa(origem):
     });
 
     const renderGraph = () => (
-        <svg width="380" height="280" viewBox="0 0 380 280" style={{ maxWidth: '100%' }}>
+        <svg width="380" height="320" viewBox="0 0 380 320" style={{ maxWidth: '100%' }}>
             <defs>
-                <marker id="arrow-dfs" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                <marker id="arrow-topo" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
                     <path d="M0,0 L0,6 L9,3 z" fill={theme.textSec} />
                 </marker>
             </defs>
@@ -199,32 +215,43 @@ procedure DFSIterativa(origem):
                         x1={x1} y1={y1} x2={x2} y2={y2}
                         stroke={theme.textSec}
                         strokeWidth="2"
-                        markerEnd="url(#arrow-dfs)"
+                        markerEnd="url(#arrow-topo)"
                     />
                 );
             })}
-            {nodes.map(node => (
-                <g key={node}>
-                    <circle
-                        cx={positions[node].x}
-                        cy={positions[node].y}
-                        r="20"
-                        fill={activeStep >= 1 && dfsSteps[activeStep - 1].visited.includes(node) ? theme.accent : theme.cardBg}
-                        stroke={theme.accent}
-                        strokeWidth="2"
-                    />
-                    <text
-                        x={positions[node].x}
-                        y={positions[node].y}
-                        dy="5"
-                        textAnchor="middle"
-                        fill={activeStep >= 1 && dfsSteps[activeStep - 1].visited.includes(node) ? '#fff' : theme.text}
-                        fontWeight="600"
-                    >
-                        {node}
-                    </text>
-                </g>
-            ))}
+            {nodes.map(node => {
+                const step = activeStep >= 1 ? topoSteps[activeStep - 1] : topoSteps[0];
+                const isVisited = step.visited.includes(node);
+                const isFinished = step.finished.includes(node);
+                const isHighlighted = step.highlight === node;
+                
+                let fill = theme.cardBg;
+                if (isFinished) fill = theme.finished;
+                else if (isVisited) fill = theme.visited;
+                
+                return (
+                    <g key={node}>
+                        <circle
+                            cx={positions[node].x}
+                            cy={positions[node].y}
+                            r="20"
+                            fill={fill}
+                            stroke={isHighlighted ? theme.current : theme.accent}
+                            strokeWidth={isHighlighted ? "3" : "2"}
+                        />
+                        <text
+                            x={positions[node].x}
+                            y={positions[node].y}
+                            dy="5"
+                            textAnchor="middle"
+                            fill={isVisited || isFinished ? '#fff' : theme.text}
+                            fontWeight="600"
+                        >
+                            {node}
+                        </text>
+                    </g>
+                );
+            })}
         </svg>
     );
 
@@ -233,18 +260,18 @@ procedure DFSIterativa(origem):
             <div style={{ padding: '40px', width: '100%', maxWidth: '1000px', margin: '0 auto' }}>
                 <section style={{ marginBottom: '40px' }}>
                     <h2 style={{ fontSize: '1.5rem', fontWeight: '700', color: theme.text, marginBottom: '20px' }}>
-                        Busca em Profundidade (Depth-First Search)
+                        Ordenação Topológica
                     </h2>
                     <p style={{ lineHeight: 1.8, color: theme.textSec, marginBottom: '15px', fontSize: '1.05rem' }}>
-                        O DFS explora um grafo descendo o máximo possível antes de retroceder. É implementado naturalmente
-                        com recursão (call stack) ou de forma iterativa com uma pilha explícita, o que garante controle fino
-                        sobre o fluxo e evita estouro de pilha em grafos grandes.
+                        A ordenação topológica é uma ordenação linear dos vértices de um grafo direcionado acíclico (DAG)
+                        tal que, para toda aresta direcionada (u, v), o vértice u aparece antes de v na ordenação.
+                        É implementada usando uma modificação do DFS: quando um nó é finalizado (todos os seus vizinhos
+                        foram processados), ele é adicionado ao início da lista topológica.
                     </p>
                     <p style={{ lineHeight: 1.8, color: theme.textSec, fontSize: '1.05rem' }}>
-                        A técnica é base para detecção de ciclos, ordenação topológica, componentes conectados e construção de
-                        árvores de profundidade. No paradigma orientado a objetos separam-se responsabilidades: o grafo expõe
-                        iteradores de vizinhança e o serviço DFS orquestra estados (visitado, pai, timestamps) sem acoplar regras
-                        de negócio na estrutura de dados.
+                        A técnica é fundamental para resolver problemas de dependências, como ordenação de tarefas,
+                        compilação de módulos e planejamento de projetos. O algoritmo garante que todas as dependências
+                        sejam respeitadas na ordem final.
                     </p>
                 </section>
 
@@ -257,7 +284,7 @@ procedure DFSIterativa(origem):
                     boxShadow: '0 4px 6px rgba(0,0,0,0.08)'
                 }}>
                     <h3 style={{ color: theme.text, fontSize: '1.2rem', marginBottom: '20px', fontWeight: 600 }}>
-                        Grafo de Referência
+                        Grafo de Referência (DAG)
                     </h3>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '30px', justifyContent: 'center', alignItems: 'center' }}>
                         {renderGraph()}
@@ -274,7 +301,7 @@ procedure DFSIterativa(origem):
                                         <tr key={row.node} style={{ borderBottom: `1px solid ${theme.border}` }}>
                                             <td style={{ padding: '10px' }}>{row.node}</td>
                                             <td style={{ padding: '10px', color: theme.textSec }}>
-                                                {row.neighbors.join(', ')}
+                                                {row.neighbors.join(', ') || '∅'}
                                             </td>
                                         </tr>
                                     ))}
@@ -283,23 +310,23 @@ procedure DFSIterativa(origem):
                         </div>
                     </div>
                     <p style={{ textAlign: 'center', marginTop: '15px', color: theme.textSec }}>
-                        Consideramos um grafo direcionado para destacar a ordem de exploração, mas o raciocínio se aplica a grafos não direcionados.
+                        Grafo direcionado acíclico (DAG). A ordenação topológica garante que dependências sejam respeitadas.
                     </p>
                 </section>
 
                 <section style={{ marginBottom: '40px' }}>
                     <h3 style={{ color: theme.text, fontSize: '1.2rem', marginBottom: '20px', fontWeight: 600 }}>
-                        Simulação Passo a Passo (versão iterativa)
+                        Simulação Passo a Passo
                     </h3>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: '20px' }}>
-                        {dfsSteps.map((step, index) => (
+                        {topoSteps.map((step, index) => (
                             <button
                                 key={step.title}
                                 onClick={() => setActiveStep(index + 1)}
                                 style={{
                                     borderRadius: '12px',
                                     border: `1px solid ${activeStep === index + 1 ? theme.accent : theme.border}`,
-                                    backgroundColor: activeStep === index + 1 ? theme.stack : theme.cardBg,
+                                    backgroundColor: activeStep === index + 1 ? (isDarkMode ? '#2d1b4e' : '#f3e8ff') : theme.cardBg,
                                     padding: '18px',
                                     textAlign: 'left',
                                     cursor: 'pointer',
@@ -310,17 +337,20 @@ procedure DFSIterativa(origem):
                                 <h4 style={{ margin: '8px 0', color: theme.text }}>{step.title}</h4>
                                 <p style={{ margin: 0, color: theme.textSec, fontSize: '0.9rem' }}>{step.description}</p>
                                 <div style={{ marginTop: '12px', fontFamily: 'JetBrains Mono, monospace', fontSize: '0.85rem' }}>
-                                    <p style={{ margin: '4px 0', color: theme.text }}>Pilha: [{step.stack.join(', ') || '∅'}]</p>
-                                    <p style={{ margin: '4px 0', color: theme.text }}>Visitados: {step.visited.join(' → ') || '∅'}</p>
+                                    <p style={{ margin: '4px 0', color: theme.text }}>Visitados: {step.visited.join(', ') || '∅'}</p>
+                                    <p style={{ margin: '4px 0', color: theme.text }}>Finalizados: {step.finished.join(', ') || '∅'}</p>
+                                    <p style={{ margin: '4px 0', color: theme.accent, fontWeight: '600' }}>
+                                        Ordem: {step.order.join(' → ') || '∅'}
+                                    </p>
                                 </div>
                             </button>
                         ))}
                     </div>
                 </section>
 
-                <section style={{ marginBottom: '40px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: '20px' }}>
+                <section style={{ marginBottom: '40px' }}>
                     <div style={{ borderRadius: '12px', border: `1px solid ${theme.border}`, padding: '24px', backgroundColor: theme.cardBg }}>
-                        <h3 style={{ color: theme.text, fontSize: '1.1rem', marginBottom: '12px', fontWeight: 600 }}>Pseudocódigo Recursivo</h3>
+                        <h3 style={{ color: theme.text, fontSize: '1.1rem', marginBottom: '12px', fontWeight: 600 }}>Pseudocódigo</h3>
                         <pre style={{
                             margin: 0,
                             backgroundColor: isDarkMode ? '#0f172a' : '#0f172a',
@@ -332,28 +362,11 @@ procedure DFSIterativa(origem):
                             whiteSpace: 'pre-wrap',
                             lineHeight: 1.6
                         }}>
-                            {recursivePseudo}
-                        </pre>
-                    </div>
-                    <div style={{ borderRadius: '12px', border: `1px solid ${theme.border}`, padding: '24px', backgroundColor: theme.cardBg }}>
-                        <h3 style={{ color: theme.text, fontSize: '1.1rem', marginBottom: '12px', fontWeight: 600 }}>Pseudocódigo Iterativo</h3>
-                        <pre style={{
-                            margin: 0,
-                            backgroundColor: isDarkMode ? '#0f172a' : '#0f172a',
-                            color: '#e2e8f0',
-                            borderRadius: '10px',
-                            padding: '16px',
-                            fontFamily: 'JetBrains Mono, Consolas, monospace',
-                            fontSize: '0.85rem',
-                            whiteSpace: 'pre-wrap',
-                            lineHeight: 1.6
-                        }}>
-                            {iterativePseudo}
+                            {pseudoCode}
                         </pre>
                     </div>
                 </section>
 
-                {/* --- NOVA SEÇÃO: VISUALIZAÇÃO AUTOMÁTICA --- */}
                 <section style={{ 
                     backgroundColor: theme.cardBg, 
                     borderRadius: '12px', 
@@ -368,7 +381,6 @@ procedure DFSIterativa(origem):
                     <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                         <h3 style={{ color: theme.text, fontSize: '1.2rem', fontWeight: 600 }}>Execução Visual</h3>
                         
-                        {/* Controles do Mini Player */}
                         <div style={{ display: 'flex', gap: '10px' }}>
                             <button onClick={() => setAutoStep(0)} style={{ padding: '8px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.bg, cursor: 'pointer', color: theme.textSec }}>
                                 <RotateCcw size={16} />
@@ -380,8 +392,7 @@ procedure DFSIterativa(origem):
                         </div>
                     </div>
                     
-                    <svg width="300" height="300" viewBox="0 0 380 280" style={{ overflow: 'visible' }}>
-                        {/* Arestas */}
+                    <svg width="300" height="300" viewBox="0 0 380 320" style={{ overflow: 'visible' }}>
                         {edges.map(([u, v]) => {
                             const start = positions[u];
                             const end = positions[v];
@@ -392,23 +403,24 @@ procedure DFSIterativa(origem):
                             const x2 = end.x - r * Math.cos(angle);
                             const y2 = end.y - r * Math.sin(angle);
                             
-                            return <line key={`${u}-${v}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke={theme.textSec} strokeWidth="2" markerEnd="url(#arrow-dfs)" />;
+                            return <line key={`${u}-${v}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke={theme.textSec} strokeWidth="2" markerEnd="url(#arrow-topo)" />;
                         })}
                         
-                        {/* Nós */}
                         {nodes.map(n => {
                             const pos = positions[n];
                             const currentData = demoSteps[autoStep];
                             
                             const isCurr = currentData.curr === n;
                             const isVis = currentData.visited.includes(n);
+                            const isFin = currentData.finished.includes(n);
                             
-                            let fill = theme.cardBg; // Branco/Escuro
-                            if (isVis) fill = theme.visited; // Verde
-                            if (isCurr) fill = theme.current; // Laranja
+                            let fill = theme.cardBg;
+                            if (isFin) fill = theme.finished;
+                            else if (isVis) fill = theme.visited;
+                            if (isCurr) fill = theme.current;
                             
                             let textColor = theme.text;
-                            if (isVis || isCurr) textColor = '#fff';
+                            if (isVis || isFin || isCurr) textColor = '#fff';
 
                             return (
                                 <g key={n} style={{ transition: 'all 0.3s ease' }}>
@@ -423,12 +435,17 @@ procedure DFSIterativa(origem):
                          <span style={{ color: theme.textSec, fontSize: '0.9rem', marginRight: '10px' }}>Passo {autoStep + 1}/{demoSteps.length}:</span>
                          <strong style={{ color: theme.text }}>{demoSteps[autoStep].desc}</strong>
                     </div>
+                    {demoSteps[autoStep].order.length > 0 && (
+                        <div style={{ marginTop: '10px', padding: '15px', backgroundColor: theme.accent + '20', borderRadius: '8px', border: `1px solid ${theme.accent}`, width: '100%', textAlign: 'center' }}>
+                            <span style={{ color: theme.textSec, fontSize: '0.9rem' }}>Ordem Topológica: </span>
+                            <strong style={{ color: theme.accent, fontSize: '1.1rem' }}>{demoSteps[autoStep].order.join(' → ')}</strong>
+                        </div>
+                    )}
                 </section>
-                {/* ----------------------------------------- */}
 
                 <section style={{ marginBottom: '60px' }}>
                     <h3 style={{ color: theme.text, fontSize: '1.2rem', marginBottom: '20px', fontWeight: 600 }}>
-                        Complexidade e Boas Práticas
+                        Complexidade e Aplicações
                     </h3>
                     <div style={{ overflowX: 'auto', borderRadius: '8px', border: `1px solid ${theme.border}` }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse', color: theme.text }}>
@@ -443,22 +460,22 @@ procedure DFSIterativa(origem):
                                 <tr style={{ borderBottom: `1px solid ${theme.border}`, backgroundColor: theme.cardBg }}>
                                     <td style={{ padding: '14px' }}>Tempo</td>
                                     <td style={{ padding: '14px', color: '#10b981', fontWeight: 600 }}>O(V + E)</td>
-                                    <td style={{ padding: '14px', color: theme.textSec }}>Cada vértice e aresta é processado no máximo uma vez.</td>
+                                    <td style={{ padding: '14px', color: theme.textSec }}>Baseado em DFS, visita cada vértice e aresta uma vez.</td>
                                 </tr>
                                 <tr style={{ borderBottom: `1px solid ${theme.border}`, backgroundColor: theme.cardBg }}>
                                     <td style={{ padding: '14px' }}>Espaço</td>
                                     <td style={{ padding: '14px', color: '#facc15', fontWeight: 600 }}>O(V)</td>
-                                    <td style={{ padding: '14px', color: theme.textSec }}>Para vetor de visitados + pilha (explícita ou implícita).</td>
+                                    <td style={{ padding: '14px', color: theme.textSec }}>Para vetor de visitados + pilha de recursão.</td>
                                 </tr>
                                 <tr style={{ borderBottom: `1px solid ${theme.border}`, backgroundColor: theme.cardBg }}>
-                                    <td style={{ padding: '14px' }}>Boas Práticas OO</td>
-                                    <td style={{ padding: '14px', color: '#3b82f6', fontWeight: 600 }}>Separação de responsabilidades</td>
-                                    <td style={{ padding: '14px', color: theme.textSec }}>Classe `Graph` expõe `neighbors(u)`; serviço DFS controla estado e eventos.</td>
+                                    <td style={{ padding: '14px' }}>Aplicações</td>
+                                    <td style={{ padding: '14px', color: '#3b82f6', fontWeight: 600 }}>Dependências, Compilação, Planejamento</td>
+                                    <td style={{ padding: '14px', color: theme.textSec }}>Ordenação de tarefas com dependências, compilação de módulos, planejamento de projetos.</td>
                                 </tr>
                                 <tr style={{ backgroundColor: theme.cardBg }}>
-                                    <td style={{ padding: '14px' }}>Tratamento de ciclos</td>
-                                    <td style={{ padding: '14px', color: '#ef4444', fontWeight: 600 }}>Visitados + detecção de aresta de retorno</td>
-                                    <td style={{ padding: '14px', color: theme.textSec }}>Registro de tempo de entrada/saída facilita diagnóstico de ciclos.</td>
+                                    <td style={{ padding: '14px' }}>Requisito</td>
+                                    <td style={{ padding: '14px', color: '#ef4444', fontWeight: 600 }}>Grafo DAG</td>
+                                    <td style={{ padding: '14px', color: theme.textSec }}>O grafo deve ser direcionado e acíclico. Ciclos impedem ordenação topológica.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -469,4 +486,5 @@ procedure DFSIterativa(origem):
     );
 };
 
-export default DepthFirstSearchClass;
+export default TopologicalSortClass;
+

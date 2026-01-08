@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { Play, Pause, RotateCcw } from 'lucide-react'; // Ícones para o player
 
-const DepthFirstSearchClass = () => {
+const BreadthFirstSearchClass = () => {
     const { isDarkMode } = useOutletContext();
     
     // Estado da Simulação Interativa (Mantido)
@@ -18,8 +18,8 @@ const DepthFirstSearchClass = () => {
         text: isDarkMode ? '#f1f5f9' : '#1e293b',
         textSec: isDarkMode ? '#94a3b8' : '#475569',
         border: isDarkMode ? '#334155' : '#e2e8f0',
-        accent: '#3b82f6',
-        stack: isDarkMode ? '#172235' : '#e0f2fe',
+        accent: '#10b981',
+        queue: isDarkMode ? '#172235' : '#ecfdf5',
         visited: '#10b981', // Verde para visitado
         current: '#f59e0b'  // Laranja para atual
     };
@@ -44,17 +44,13 @@ const DepthFirstSearchClass = () => {
 
     // --- NOVO: Roteiro da Animação Automática ---
     const demoSteps = [
-        { curr: 'A', visited: ['A'], desc: "Inicia em A. Marca como visitado." },
-        { curr: 'B', visited: ['A', 'B'], desc: "Vai para vizinho B." },
-        { curr: 'D', visited: ['A', 'B', 'D'], desc: "Vai para vizinho D." },
-        { curr: 'F', visited: ['A', 'B', 'D', 'F'], desc: "Vai para vizinho F." },
-        { curr: 'D', visited: ['A', 'B', 'D', 'F'], desc: "Backtrack: Retorna a D (F não tem novos vizinhos)." },
-        { curr: 'B', visited: ['A', 'B', 'D', 'F'], desc: "Backtrack: Retorna a B (D não tem mais vizinhos)." },
-        { curr: 'E', visited: ['A', 'B', 'D', 'F', 'E'], desc: "Vai para vizinho E (próximo de B)." },
-        { curr: 'B', visited: ['A', 'B', 'D', 'F', 'E'], desc: "Backtrack: Retorna a B (E não tem novos vizinhos)." },
-        { curr: 'A', visited: ['A', 'B', 'D', 'F', 'E'], desc: "Backtrack: Retorna a A (B não tem mais vizinhos)." },
-        { curr: 'C', visited: ['A', 'B', 'D', 'F', 'E', 'C'], desc: "Vai para vizinho C (próximo de A)." },
-        { curr: null, visited: ['A', 'B', 'D', 'F', 'E', 'C'], desc: "Concluído." }
+        { curr: 'A', visited: ['A'], queue: ['B', 'C'], desc: "Inicia em A. Enfileira vizinhos B e C." },
+        { curr: 'B', visited: ['A', 'B'], queue: ['C', 'D', 'E'], desc: "Processa B. Enfileira vizinhos D e E." },
+        { curr: 'C', visited: ['A', 'B', 'C'], queue: ['D', 'E'], desc: "Processa C. E já está na fila." },
+        { curr: 'D', visited: ['A', 'B', 'C', 'D'], queue: ['E', 'F'], desc: "Processa D. Enfileira F." },
+        { curr: 'E', visited: ['A', 'B', 'C', 'D', 'E'], queue: ['F'], desc: "Processa E. F já está na fila." },
+        { curr: 'F', visited: ['A', 'B', 'C', 'D', 'E', 'F'], queue: [], desc: "Processa F. Fila vazia." },
+        { curr: null, visited: ['A', 'B', 'C', 'D', 'E', 'F'], queue: [], desc: "Concluído." }
     ];
 
     // --- NOVO: Loop da Animação ---
@@ -85,89 +81,64 @@ const DepthFirstSearchClass = () => {
     };
 
     // Dados da simulação interativa (Mantido)
-    const dfsSteps = [
+    const bfsSteps = [
         {
             title: 'Inicialização',
-            description: 'Marcamos todos como não visitados, empilhamos o nó inicial (A).',
-            stack: ['A'],
+            description: 'Marcamos todos como não visitados, enfileiramos o nó inicial (A).',
+            queue: ['A'],
             visited: []
         },
         {
-            title: 'Visita A',
-            description: 'Desempilhamos A, marcamos como visitado e empilhamos seus vizinhos (B, C) em ordem reversa.',
-            stack: ['C', 'B'],
+            title: 'Processa A',
+            description: 'Desenfileiramos A, marcamos como visitado e enfileiramos seus vizinhos (B, C) em ordem.',
+            queue: ['B', 'C'],
             visited: ['A'],
             highlight: 'A'
         },
         {
-            title: 'Visita B',
-            description: 'Processamos B e empilhamos D e E. Repare que empilhar em ordem reversa preserva a ordem natural na exploração.',
-            stack: ['C', 'E', 'D'],
+            title: 'Processa B',
+            description: 'Processamos B e enfileiramos D e E. Note que seguimos a ordem de chegada (FIFO).',
+            queue: ['C', 'D', 'E'],
             visited: ['A', 'B'],
             highlight: 'B'
         },
         {
-            title: 'Visita D',
-            description: 'Desempilhamos D, marcamos como visitado. D tem vizinho F que não foi visitado, então empilhamos F.',
-            stack: ['C', 'E', 'F'],
-            visited: ['A', 'B', 'D'],
-            highlight: 'D'
-        },
-        {
-            title: 'Visita F',
-            description: 'Desempilhamos F, marcamos como visitado. F tem vizinho E que já foi visitado, então F não tem novos vizinhos.',
-            stack: ['C', 'E'],
-            visited: ['A', 'B', 'D', 'F'],
-            highlight: 'F'
-        },
-        {
-            title: 'Backtrack: Retorna a D',
-            description: 'F não tem mais vizinhos, desempilhamos F e retornamos à pilha. D também não tem mais vizinhos não visitados.',
-            stack: ['C', 'E'],
-            visited: ['A', 'B', 'D', 'F'],
-            highlight: 'D'
-        },
-        {
-            title: 'Processa E',
-            description: 'Desempilhamos E, marcamos como visitado. E tem vizinho F mas já foi visitado, então E não tem novos vizinhos.',
-            stack: ['C'],
-            visited: ['A', 'B', 'D', 'F', 'E'],
-            highlight: 'E'
-        },
-        {
-            title: 'Visita C',
-            description: 'Desempilhamos C, marcamos como visitado. C tem vizinho E mas já foi visitado. Pilha vazia, DFS termina.',
-            stack: [],
-            visited: ['A', 'B', 'D', 'F', 'E', 'C'],
+            title: 'Processa C',
+            description: 'Visitamos C. Seu vizinho E já está na fila, então não o enfileiramos novamente.',
+            queue: ['D', 'E'],
+            visited: ['A', 'B', 'C'],
             highlight: 'C'
+        },
+        {
+            title: 'Processa D',
+            description: 'Visitamos D e enfileiramos F. O BFS garante que visitamos nós por camadas.',
+            queue: ['E', 'F'],
+            visited: ['A', 'B', 'C', 'D'],
+            highlight: 'D'
+        },
+        {
+            title: 'Processa E e F',
+            description: 'Visitamos E e F, que não têm novos vizinhos. A fila se esvazia e o BFS termina.',
+            queue: [],
+            visited: ['A', 'B', 'C', 'D', 'E', 'F'],
+            highlight: 'E'
         }
     ];
 
-    const recursivePseudo = `
-procedure DFS(u):
-    marcado[u] = verdadeiro
-    registrarEntrada(u)
+    const pseudoCode = `
+procedure BFS(origem):
+    fila = Queue()
+    marcado[origem] = verdadeiro
+    fila.enfileira(origem)
 
-    para cada v em adj[u]:
-        se !marcado[v]:
-            definirPai(v, u)
-            DFS(v)
-
-    registrarSaida(u)`;
-
-    const iterativePseudo = `
-procedure DFSIterativa(origem):
-    pilha = Stack()
-    pilha.push(origem)
-
-    enquanto pilha não vazia:
-        u = pilha.pop()
-        se marcado[u]: continuar
-        marcado[u] = verdadeiro
-        registrarVisita(u)
-        para v em adj[u] em ordem reversa:
+    enquanto fila não vazia:
+        u = fila.desenfileira()
+        para cada v em adj[u]:
             se !marcado[v]:
-                pilha.push(v)`;
+                marcado[v] = verdadeiro
+                distancia[v] = distancia[u] + 1
+                pai[v] = u
+                fila.enfileira(v)`;
 
     const adjacencyRows = nodes.map(node => {
         const neighbors = edges
@@ -179,7 +150,7 @@ procedure DFSIterativa(origem):
     const renderGraph = () => (
         <svg width="380" height="280" viewBox="0 0 380 280" style={{ maxWidth: '100%' }}>
             <defs>
-                <marker id="arrow-dfs" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                <marker id="arrow-bfs" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
                     <path d="M0,0 L0,6 L9,3 z" fill={theme.textSec} />
                 </marker>
             </defs>
@@ -199,7 +170,7 @@ procedure DFSIterativa(origem):
                         x1={x1} y1={y1} x2={x2} y2={y2}
                         stroke={theme.textSec}
                         strokeWidth="2"
-                        markerEnd="url(#arrow-dfs)"
+                        markerEnd="url(#arrow-bfs)"
                     />
                 );
             })}
@@ -209,7 +180,7 @@ procedure DFSIterativa(origem):
                         cx={positions[node].x}
                         cy={positions[node].y}
                         r="20"
-                        fill={activeStep >= 1 && dfsSteps[activeStep - 1].visited.includes(node) ? theme.accent : theme.cardBg}
+                        fill={activeStep >= 1 && bfsSteps[activeStep - 1].visited.includes(node) ? theme.accent : theme.cardBg}
                         stroke={theme.accent}
                         strokeWidth="2"
                     />
@@ -218,7 +189,7 @@ procedure DFSIterativa(origem):
                         y={positions[node].y}
                         dy="5"
                         textAnchor="middle"
-                        fill={activeStep >= 1 && dfsSteps[activeStep - 1].visited.includes(node) ? '#fff' : theme.text}
+                        fill={activeStep >= 1 && bfsSteps[activeStep - 1].visited.includes(node) ? '#fff' : theme.text}
                         fontWeight="600"
                     >
                         {node}
@@ -233,18 +204,17 @@ procedure DFSIterativa(origem):
             <div style={{ padding: '40px', width: '100%', maxWidth: '1000px', margin: '0 auto' }}>
                 <section style={{ marginBottom: '40px' }}>
                     <h2 style={{ fontSize: '1.5rem', fontWeight: '700', color: theme.text, marginBottom: '20px' }}>
-                        Busca em Profundidade (Depth-First Search)
+                        Busca em Largura (Breadth-First Search)
                     </h2>
                     <p style={{ lineHeight: 1.8, color: theme.textSec, marginBottom: '15px', fontSize: '1.05rem' }}>
-                        O DFS explora um grafo descendo o máximo possível antes de retroceder. É implementado naturalmente
-                        com recursão (call stack) ou de forma iterativa com uma pilha explícita, o que garante controle fino
-                        sobre o fluxo e evita estouro de pilha em grafos grandes.
+                        O BFS explora um grafo camada por camada, visitando todos os nós a uma distância k antes
+                        de explorar nós a distância k+1. É implementado naturalmente com uma fila (FIFO), garantindo
+                        que exploramos os nós em ordem de proximidade do nó de origem.
                     </p>
                     <p style={{ lineHeight: 1.8, color: theme.textSec, fontSize: '1.05rem' }}>
-                        A técnica é base para detecção de ciclos, ordenação topológica, componentes conectados e construção de
-                        árvores de profundidade. No paradigma orientado a objetos separam-se responsabilidades: o grafo expõe
-                        iteradores de vizinhança e o serviço DFS orquestra estados (visitado, pai, timestamps) sem acoplar regras
-                        de negócio na estrutura de dados.
+                        A técnica é ideal para encontrar o caminho mais curto em grafos não ponderados, detecção de
+                        componentes conectadas e exploração de vizinhanças. Assim como o DFS, o BFS segue o padrão OO
+                        separando responsabilidades entre o grafo e o serviço de busca, permitindo reuso e testabilidade.
                     </p>
                 </section>
 
@@ -289,17 +259,17 @@ procedure DFSIterativa(origem):
 
                 <section style={{ marginBottom: '40px' }}>
                     <h3 style={{ color: theme.text, fontSize: '1.2rem', marginBottom: '20px', fontWeight: 600 }}>
-                        Simulação Passo a Passo (versão iterativa)
+                        Simulação Passo a Passo
                     </h3>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: '20px' }}>
-                        {dfsSteps.map((step, index) => (
+                        {bfsSteps.map((step, index) => (
                             <button
                                 key={step.title}
                                 onClick={() => setActiveStep(index + 1)}
                                 style={{
                                     borderRadius: '12px',
                                     border: `1px solid ${activeStep === index + 1 ? theme.accent : theme.border}`,
-                                    backgroundColor: activeStep === index + 1 ? theme.stack : theme.cardBg,
+                                    backgroundColor: activeStep === index + 1 ? theme.queue : theme.cardBg,
                                     padding: '18px',
                                     textAlign: 'left',
                                     cursor: 'pointer',
@@ -310,7 +280,7 @@ procedure DFSIterativa(origem):
                                 <h4 style={{ margin: '8px 0', color: theme.text }}>{step.title}</h4>
                                 <p style={{ margin: 0, color: theme.textSec, fontSize: '0.9rem' }}>{step.description}</p>
                                 <div style={{ marginTop: '12px', fontFamily: 'JetBrains Mono, monospace', fontSize: '0.85rem' }}>
-                                    <p style={{ margin: '4px 0', color: theme.text }}>Pilha: [{step.stack.join(', ') || '∅'}]</p>
+                                    <p style={{ margin: '4px 0', color: theme.text }}>Fila: [{step.queue.join(', ') || '∅'}]</p>
                                     <p style={{ margin: '4px 0', color: theme.text }}>Visitados: {step.visited.join(' → ') || '∅'}</p>
                                 </div>
                             </button>
@@ -318,9 +288,9 @@ procedure DFSIterativa(origem):
                     </div>
                 </section>
 
-                <section style={{ marginBottom: '40px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: '20px' }}>
+                <section style={{ marginBottom: '40px' }}>
                     <div style={{ borderRadius: '12px', border: `1px solid ${theme.border}`, padding: '24px', backgroundColor: theme.cardBg }}>
-                        <h3 style={{ color: theme.text, fontSize: '1.1rem', marginBottom: '12px', fontWeight: 600 }}>Pseudocódigo Recursivo</h3>
+                        <h3 style={{ color: theme.text, fontSize: '1.1rem', marginBottom: '12px', fontWeight: 600 }}>Pseudocódigo</h3>
                         <pre style={{
                             margin: 0,
                             backgroundColor: isDarkMode ? '#0f172a' : '#0f172a',
@@ -332,23 +302,7 @@ procedure DFSIterativa(origem):
                             whiteSpace: 'pre-wrap',
                             lineHeight: 1.6
                         }}>
-                            {recursivePseudo}
-                        </pre>
-                    </div>
-                    <div style={{ borderRadius: '12px', border: `1px solid ${theme.border}`, padding: '24px', backgroundColor: theme.cardBg }}>
-                        <h3 style={{ color: theme.text, fontSize: '1.1rem', marginBottom: '12px', fontWeight: 600 }}>Pseudocódigo Iterativo</h3>
-                        <pre style={{
-                            margin: 0,
-                            backgroundColor: isDarkMode ? '#0f172a' : '#0f172a',
-                            color: '#e2e8f0',
-                            borderRadius: '10px',
-                            padding: '16px',
-                            fontFamily: 'JetBrains Mono, Consolas, monospace',
-                            fontSize: '0.85rem',
-                            whiteSpace: 'pre-wrap',
-                            lineHeight: 1.6
-                        }}>
-                            {iterativePseudo}
+                            {pseudoCode}
                         </pre>
                     </div>
                 </section>
@@ -392,7 +346,7 @@ procedure DFSIterativa(origem):
                             const x2 = end.x - r * Math.cos(angle);
                             const y2 = end.y - r * Math.sin(angle);
                             
-                            return <line key={`${u}-${v}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke={theme.textSec} strokeWidth="2" markerEnd="url(#arrow-dfs)" />;
+                            return <line key={`${u}-${v}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke={theme.textSec} strokeWidth="2" markerEnd="url(#arrow-bfs)" />;
                         })}
                         
                         {/* Nós */}
@@ -448,17 +402,17 @@ procedure DFSIterativa(origem):
                                 <tr style={{ borderBottom: `1px solid ${theme.border}`, backgroundColor: theme.cardBg }}>
                                     <td style={{ padding: '14px' }}>Espaço</td>
                                     <td style={{ padding: '14px', color: '#facc15', fontWeight: 600 }}>O(V)</td>
-                                    <td style={{ padding: '14px', color: theme.textSec }}>Para vetor de visitados + pilha (explícita ou implícita).</td>
+                                    <td style={{ padding: '14px', color: theme.textSec }}>Para vetor de visitados + fila (pode conter até V nós).</td>
                                 </tr>
                                 <tr style={{ borderBottom: `1px solid ${theme.border}`, backgroundColor: theme.cardBg }}>
-                                    <td style={{ padding: '14px' }}>Boas Práticas OO</td>
-                                    <td style={{ padding: '14px', color: '#3b82f6', fontWeight: 600 }}>Separação de responsabilidades</td>
-                                    <td style={{ padding: '14px', color: theme.textSec }}>Classe `Graph` expõe `neighbors(u)`; serviço DFS controla estado e eventos.</td>
+                                    <td style={{ padding: '14px' }}>Aplicações</td>
+                                    <td style={{ padding: '14px', color: '#3b82f6', fontWeight: 600 }}>Caminho mais curto (não ponderado)</td>
+                                    <td style={{ padding: '14px', color: theme.textSec }}>Garante distância mínima devido à exploração por camadas.</td>
                                 </tr>
                                 <tr style={{ backgroundColor: theme.cardBg }}>
-                                    <td style={{ padding: '14px' }}>Tratamento de ciclos</td>
-                                    <td style={{ padding: '14px', color: '#ef4444', fontWeight: 600 }}>Visitados + detecção de aresta de retorno</td>
-                                    <td style={{ padding: '14px', color: theme.textSec }}>Registro de tempo de entrada/saída facilita diagnóstico de ciclos.</td>
+                                    <td style={{ padding: '14px' }}>Ordem de exploração</td>
+                                    <td style={{ padding: '14px', color: '#ef4444', fontWeight: 600 }}>FIFO (fila)</td>
+                                    <td style={{ padding: '14px', color: theme.textSec }}>Diferente do DFS (LIFO), o BFS explora nós por distância.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -469,4 +423,4 @@ procedure DFSIterativa(origem):
     );
 };
 
-export default DepthFirstSearchClass;
+export default BreadthFirstSearchClass;
