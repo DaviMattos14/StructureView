@@ -7,7 +7,7 @@ import { api } from '../services/api';
 const ProblemsList = () => {
   const navigate = useNavigate();
   const { isDarkMode } = useOutletContext();
-  const { user } = useAuth(); 
+  const { user } = useAuth();
 
   const [exercises, setExercises] = useState([]);
   const [progressMap, setProgressMap] = useState({}); 
@@ -39,15 +39,15 @@ const ProblemsList = () => {
       
       await Promise.all(exercises.map(async (ex) => {
         try {
-            const p = await api.getUserProgress(ex.id, user.id);
-            if (p && p.success && p.progress) {
-                // CORREÇÃO: Verificação explícita de completude
+          const p = await api.getUserProgress(ex.id, user.id);
+          if (p && p.success && p.progress) {
+            // CORREÇÃO: Verificação explícita de completude
                 // O banco pode retornar 1 (number) ou true (boolean)
                 const isDone = p.progress.is_completed === 1 || p.progress.is_completed === true;
-                newProgressMap[ex.id] = isDone ? 'completed' : 'in_progress';
-            } else {
-                newProgressMap[ex.id] = 'not_started';
-            }
+            newProgressMap[ex.id] = isDone ? 'completed' : 'in_progress';
+          } else {
+            newProgressMap[ex.id] = 'not_started';
+          }
         } catch (e) {
             newProgressMap[ex.id] = 'not_started';
         }
@@ -117,10 +117,10 @@ const ProblemsList = () => {
 
   return (
     <main style={{ flex: 1, padding: '3rem', overflowY: 'auto', backgroundColor: theme.bg }}>
-      
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
         <h2 style={{ color: theme.text, fontSize: '1.75rem', fontWeight: '700', margin: 0 }}>
-            Exercícios Práticos
+          Exercícios Práticos
         </h2>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
@@ -162,9 +162,9 @@ const ProblemsList = () => {
       </div>
 
       {!user && (
-        <div style={{ 
-          marginBottom: '2rem', padding: '15px', borderRadius: '8px', 
-          backgroundColor: isDarkMode ? 'rgba(59, 130, 246, 0.1)' : '#eff6ff', 
+        <div style={{
+          marginBottom: '2rem', padding: '15px', borderRadius: '8px',
+          backgroundColor: isDarkMode ? 'rgba(59, 130, 246, 0.1)' : '#eff6ff',
           border: '1px solid #3b82f6', color: '#3b82f6',
           display: 'flex', alignItems: 'center', gap: '10px'
         }}>
@@ -172,7 +172,7 @@ const ProblemsList = () => {
           <span>Faça login para salvar seu progresso nos exercícios.</span>
         </div>
       )}
-      
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
         {Object.keys(groupedExercises).map((topic, topicIdx) => {
             if (selectedTopic !== 'all' && topic !== selectedTopic) return null;
@@ -219,17 +219,17 @@ const ProblemsList = () => {
                                 <Box size={24} color={theme.textSec} style={{opacity: 0.5}} />
                             </div>
 
-                            <div style={{ marginTop: 'auto', paddingTop: '15px', borderTop: `1px solid ${theme.cardBorder}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <button 
-                                    onClick={() => handleNavigation(item)}
-                                    style={{ 
-                                        display: 'flex', alignItems: 'center', gap: '8px',
-                                        background: '#3b82f6', color: 'white', border: 'none',
-                                        padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: '500'
-                                    }}
-                                >
-                                    <Play size={16} fill="white" /> Praticar
-                                </button>
+                      <div style={{ marginTop: 'auto', paddingTop: '15px', borderTop: `1px solid ${theme.cardBorder}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <button
+                          onClick={() => handleNavigation(item)}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: '8px',
+                            background: '#3b82f6', color: 'white', border: 'none',
+                            padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: '500'
+                          }}
+                        >
+                          <Play size={16} fill="white" /> Praticar
+                        </button>
 
                                 {user && (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', color: status.color, fontWeight: '500' }}>
@@ -248,9 +248,9 @@ const ProblemsList = () => {
                 </div>
             );
         })}
-        
+
         {Object.keys(groupedExercises).length === 0 && (
-             <p style={{ color: theme.textSec, textAlign: 'center', marginTop: '2rem' }}>Nenhum exercício disponível.</p>
+          <p style={{ color: theme.textSec, textAlign: 'center', marginTop: '2rem' }}>Nenhum exercício disponível.</p>
         )}
       </div>
     </main>
