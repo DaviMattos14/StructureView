@@ -1,7 +1,7 @@
 # Structure View
 |  |  |
 | :---: | :---: |
-| ![Modo Escuro](structure-view\imagens\captura1.png) | ![Modo claro](structure-view\imagens\captura2.png) |
+| ![Modo Escuro](structure-view/imagens/captura1.png) | ![Modo claro](structure-view/imagens/captura2.png) |
 
 Criado por alunos da UFRJ a partir de um trabalho da matéria de Algoritmos e Grafos, o StructureView é uma aplicacao educacional full-stack para visualizar, aprender e praticar algoritmos com aulas, exercicios e visualizadores, sendo voltada para qualquer um interessado em aprender mais sobre algoritmos em geral.
 
@@ -12,8 +12,8 @@ Criado por alunos da UFRJ a partir de um trabalho da matéria de Algoritmos e Gr
 - Autenticacao, menu do usuario e modal para alterar email/senha.
 - API REST em Node/Express integrando MySQL com charset utf8mb4 para suportar acentuacao.
 
-![](structure-view\imagens\captura3.png)
-![](structure-view\imagens\captura4.png)
+![Visualizador1](structure-view/imagens/captura3.png)
+![Visualizador2](structure-view/imagens/captura4.png)
 
 ## Stack
 - Front-end: React 19, Vite, React Router, Context API, lucide-react para icones, ESLint.
